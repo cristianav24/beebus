@@ -38,12 +38,15 @@ class PayMeController extends Controller
 
         // Predefined amounts in colones
         $predefinedAmounts = [
-            5000 => '₡5,000',
-            10000 => '₡10,000',
-            15000 => '₡15,000',
-            25000 => '₡25,000',
-            50000 => '₡50,000',
-            75000 => '₡75,000'
+            500 => '₡500',
+            1000 => '₡1,000',
+            1500 => '₡1,500',
+            2000 => '₡2,000',
+            2500 => '₡2,500',
+            3000 => '₡3,000',
+            3500 => '₡3,500',
+            6000 => '₡6,000',
+            6500 => '₡6,500'
         ];
 
         return view('backend.payment.payme-recharge', compact('children', 'totalCredits', 'predefinedAmounts'));
@@ -55,7 +58,7 @@ class PayMeController extends Controller
     public function initializePayment(Request $request)
     {
         $request->validate([
-            'amount' => 'required|integer|min:5000|max:500000',
+            'amount' => 'required|integer|min:500|max:6500',
             'student_id' => 'required|exists:histories,id'
         ]);
 

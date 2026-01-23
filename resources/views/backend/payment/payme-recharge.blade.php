@@ -239,8 +239,8 @@
 
                 <h5>3. Montos de Recarga</h5>
                 <ul>
-                    <li>Monto mínimo de recarga: ₡5,000 (cinco mil colones)</li>
-                    <li>Monto máximo de recarga: ₡500,000 (quinientos mil colones)</li>
+                    <li>Monto mínimo de recarga: ₡500 (quinientos colones)</li>
+                    <li>Monto máximo de recarga: ₡6,500 (seis mil quinientos colones)</li>
                     <li>Los créditos no tienen fecha de vencimiento</li>
                 </ul>
 
@@ -429,7 +429,7 @@
 
             $('.amount-btn').removeClass('active');
 
-            if (amount >= 5000 && amount <= 500000) {
+            if (amount >= 500 && amount <= 6500) {
                 setSelectedAmount(amount);
             } else {
                 hideAmountSelection();
@@ -502,7 +502,7 @@
         // Update payment button state based on terms acceptance
         function updatePaymentButton() {
             const termsAccepted = $('#accept-terms').is(':checked');
-            const amountValid = selectedAmount >= 5000 && selectedAmount <= 500000;
+            const amountValid = selectedAmount >= 500 && selectedAmount <= 6500;
 
             if (termsAccepted && amountValid) {
                 $('#confirm-payment-btn').prop('disabled', false);
