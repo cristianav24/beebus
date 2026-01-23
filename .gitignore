@@ -1,0 +1,111 @@
+# Compressed/Backup files
+*.zip
+*.rar
+*.tar.gz
+*.7z
+
+# PDF documentation
+*.pdf
+
+# SQL scripts (keep migrations instead)
+*.sql
+
+# Shell scripts
+*.sh
+
+# Server logs
+error_log
+
+# SSL validation folders
+.well-known/
+cgi-bin/
+
+# Laravel specific
+/node_modules
+/public/hot
+/public/storage
+/storage/*.key
+/vendor
+.env
+.env.backup
+.env.testing
+.phpunit.result.cache
+docker-compose.override.yml
+Homestead.json
+Homestead.yaml
+auth.json
+npm-debug.log
+yarn-error.log
+
+# IDE and Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Laravel Mix / Vite
+/public/js
+/public/css
+/public/mix-manifest.json
+
+# Logs
+*.log
+storage/logs/*.log
+laravel.log
+
+# Cache
+/bootstrap/cache/*.php
+/storage/framework/cache/*
+/storage/framework/sessions/*
+/storage/framework/views/*
+
+# Compiled assets
+public/build
+
+# Composer
+composer.phar
+
+# Database
+*.sqlite
+*.sqlite3
+
+# Temporary files
+*.tmp
+*.temp
+
+# Local development
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Backup files
+*.bak
+*.backup
+
+# Windows specific
+desktop.ini
+$RECYCLE.BIN/
+
+# PHPStorm
+.phpstorm.meta.php
+_ide_helper.php
+_ide_helper_models.php
+
+# Laravel Telescope
+telescope-toolbar.js
+
+# Laravel specific storage
+storage/app/public
+storage/framework/cache/data/*
+storage/framework/testing/*
