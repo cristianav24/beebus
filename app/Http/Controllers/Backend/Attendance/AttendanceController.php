@@ -37,89 +37,109 @@ class AttendanceController extends Controller
     public function index(Datatables $datatables, Request $request)
     {
         $columns = [
-            'name' => ['name' => 'history.name'],
-            'date' => ['title' => 'Fecha'],
-            'beca_nombre' => ['title' => 'Beca'],
-            'colegio_nombre' => ['title' => 'Colegio'],
-            'in_time' => ['title' => 'Marca'],
-            'out_time' => ['title' => 'Marca 2'],
-            'cuantoRestar' => ['title' => 'Debitado'],
-            'ruta_nombre' => ['title' => 'Bus-Ruta'],
-            'in_location' => ['title' => 'Ubicacion']
+            'student_name' => ['title' => 'Estudiante', 'name' => 'histories.name'],
+            'date' => ['title' => 'Fecha', 'name' => 'attendances.date'],
+            'colegio_nombre' => ['title' => 'Colegio', 'name' => 'colegios.nombre'],
+            'in_time' => ['title' => 'Entrada', 'name' => 'attendances.in_time'],
+            'out_time' => ['title' => 'Salida', 'name' => 'attendances.out_time'],
+            'cuantoRestar' => ['title' => 'Debitado', 'name' => 'attendances.cuantoRestar'],
+            'ruta_nombre' => ['title' => 'Ruta', 'name' => 'settings.key_app'],
+            'in_location' => ['title' => 'Ubicación', 'orderable' => false, 'searchable' => false]
         ];
 
-        $from = date($request->dateFrom);
-        $to = date($request->dateTo);
+        $from = $request->dateFrom;
+        $to = $request->dateTo;
 
         if ($datatables->getRequest()->ajax()) {
-            $query = Attendance::with(['history', 'colegio', 'beca', 'ruta'])
-                ->select('attendances.*');
+            // Query con JOINs en lugar de eager loading para mejor rendimiento
+            // Nota: worker_id es la FK que conecta con histories
+            $query = Attendance::leftJoin('histories', 'attendances.worker_id', '=', 'histories.id')
+                ->leftJoin('colegios', 'attendances.colegio_id', '=', 'colegios.id')
+                ->leftJoin('settings', 'attendances.ruta_id', '=', 'settings.id')
+                ->select(
+                    'attendances.*',
+                    'histories.name as student_name',
+                    'colegios.nombre as colegio_nombre',
+                    'settings.key_app as ruta_nombre'
+                );
 
             if ($from && $to) {
-                $query = $query->whereBetween('attendances.date', [$from, $to]);
+                $query->whereBetween('attendances.date', [$from, $to]);
             }
 
             // worker
             if (Auth::user()->hasRole('staff') || Auth::user()->hasRole('admin')) {
                 $getUserInfo = History::where('name', Auth::User()->name)->first();
                 if ($getUserInfo) {
-                    // There is any worker
-                    $query = $query->where('worker_id', $getUserInfo->id);
+                    $query->where('attendances.worker_id', $getUserInfo->id);
                 } else {
-                    // If there is no data attendance for this worker we add 0 id, mean data not found
-                    $query = $query->where('worker_id', 0);
+                    $query->where('attendances.worker_id', 0);
                 }
             }
 
             return $datatables->of($query)
-                ->addColumn('name', function (Attendance $data) {
-                    return $data->history->name;
+                ->editColumn('student_name', function ($data) {
+                    return $data->student_name ?: '-';
                 })
-                ->addColumn('beca_nombre', function (Attendance $data) {
-                    if ($data->beca && !empty($data->beca->nombre_beca)) {
-                        return $data->beca->nombre_beca;
+                ->editColumn('colegio_nombre', function ($data) {
+                    return $data->colegio_nombre ?: ($data->colegio ?: '-');
+                })
+                ->editColumn('ruta_nombre', function ($data) {
+                    return $data->ruta_nombre ?: ($data->rutaBus ?: '-');
+                })
+                ->editColumn('cuantoRestar', function ($data) {
+                    if ($data->cuantoRestar > 0) {
+                        return '<span class="badge badge-warning">₡' . number_format($data->cuantoRestar, 0, ',', '.') . '</span>';
                     }
-                    return $data->tipoBeca ?: 'Sin beca';
+                    return '<span class="badge badge-secondary">₡0</span>';
                 })
-                ->addColumn('colegio_nombre', function (Attendance $data) {
-                    if ($data->colegio && !empty($data->colegio->nombre)) {
-                        return $data->colegio->nombre;
+                ->addColumn('in_location', function ($data) {
+                    if (!$data->in_location) {
+                        return '-';
                     }
-                    return $data->colegio ?: 'Sin colegio';
-                })
-                ->addColumn('ruta_nombre', function (Attendance $data) {
-                    if ($data->ruta && !empty($data->ruta->key_app)) {
-                        return $data->ruta->key_app;
-                    }
-                    return $data->rutaBus ?: 'Sin ruta';
-                })
-                ->addColumn('in_location', function (Attendance $data){
                     $str = $data->in_location;
                     $desde = "*"; $hasta = "*";
                     $sub = substr($str, strpos($str,$desde)+strlen($desde),strlen($str));
                     $locationSoloLoDeAsterisk = substr($sub,0,strpos($sub,$hasta));
                     $lnkAGMaps = "https://www.google.com.uy/maps/search/".$locationSoloLoDeAsterisk."/";
-                    //return '<a href="'.$lnkAGMaps.'" target="_blank"><button class="btn btn-sm btn-success">'.$data->in_location.'</button></a>';
-                    return '<a href="'.$lnkAGMaps.'" target="_blank"><button class="btn btn-sm btn-success">Mapa</button></a>';
+                    return '<a href="'.$lnkAGMaps.'" target="_blank" class="btn btn-sm btn-success"><i class="fa fa-map-marker"></i></a>';
                 })
-                ->rawColumns(['name', 'in_location'])
+                ->rawColumns(['in_location', 'cuantoRestar'])
                 ->toJson();
         }
 
-        $columnsArrExPr = [0,1,2,3,4,5,7];
+        $columnsArrExPr = [0,1,2,3,4,5,6];
         $html = $datatables->getHtmlBuilder()
             ->columns($columns)
             ->minifiedAjax('', $this->scriptMinifiedJs())
             ->parameters([
-                'order' => [[1,'desc'], [2,'desc']],
+                'order' => [[1,'desc']],
                 'responsive' => true,
                 'autoWidth' => false,
+                'processing' => true,
+                'serverSide' => true,
                 'lengthMenu' => [
-                    [ 10, 25, 50, -1 ],
-                    [ '10 rows', '25 rows', '50 rows', 'Show all' ]
+                    [10, 25, 50, 100],
+                    ['10', '25', '50', '100']
                 ],
                 'dom' => 'Bfrtip',
                 'buttons' => $this->buttonDatatables($columnsArrExPr),
+                'language' => [
+                    'processing' => 'Cargando...',
+                    'search' => 'Buscar:',
+                    'lengthMenu' => 'Mostrar _MENU_ registros',
+                    'info' => 'Mostrando _START_ a _END_ de _TOTAL_ asistencias',
+                    'infoEmpty' => 'Mostrando 0 a 0 de 0 asistencias',
+                    'infoFiltered' => '(filtrado de _MAX_ totales)',
+                    'zeroRecords' => 'No se encontraron asistencias',
+                    'emptyTable' => 'No hay asistencias registradas',
+                    'paginate' => [
+                        'first' => 'Primero',
+                        'previous' => 'Anterior',
+                        'next' => 'Siguiente',
+                        'last' => 'Último'
+                    ]
+                ]
             ]);
 
         return view('backend.attendances.index', compact('html'));

@@ -21,24 +21,48 @@
         <div class="card-body">
             <div class="form-group row">
                 <div class="col-sm-2 col-form-label">
-                    <strong class="field-title">Nombre</strong>
+                    <strong class="field-title">Nombre(s)</strong>
                 </div>
                 <div class="col-sm-10 col-content">
-                    {{ Form::text('name', $data->name, array('class' => 'form-control', 'required')) }}
+                    {{ Form::text('first_name', $data->first_name, array('class' => 'form-control', 'required', 'placeholder' => 'Ej: Juan Pablo')) }}
                     <small class="form-text text-muted">
-                        <i class="fa fa-question-circle" aria-hidden="true"></i> Usuario.
+                        <i class="fa fa-question-circle" aria-hidden="true"></i> Nombre o nombres del usuario.
                     </small>
                 </div>
             </div>
-            
+
+            <div class="form-group row">
+                <div class="col-sm-2 col-form-label">
+                    <strong class="field-title">Primer Apellido</strong>
+                </div>
+                <div class="col-sm-10 col-content">
+                    {{ Form::text('last_name', $data->last_name, array('class' => 'form-control', 'required', 'placeholder' => 'Ej: Mora')) }}
+                    <small class="form-text text-muted">
+                        <i class="fa fa-question-circle" aria-hidden="true"></i> Primer apellido.
+                    </small>
+                </div>
+            </div>
+
+            <div class="form-group row">
+                <div class="col-sm-2 col-form-label">
+                    <strong class="field-title">Segundo Apellido</strong>
+                </div>
+                <div class="col-sm-10 col-content">
+                    {{ Form::text('second_last_name', $data->second_last_name, array('class' => 'form-control', 'placeholder' => 'Ej: Pérez')) }}
+                    <small class="form-text text-muted">
+                        <i class="fa fa-question-circle" aria-hidden="true"></i> Segundo apellido (opcional).
+                    </small>
+                </div>
+            </div>
+
             <div class="form-group row">
                 <div class="col-sm-2 col-form-label">
                     <strong class="field-title">Cédula</strong>
                 </div>
                 <div class="col-sm-10 col-content">
-                    {{ Form::text('cedula', $data->cedula, array('class' => 'form-control', 'required')) }}
+                    {{ Form::text('cedula', $data->cedula, array('class' => 'form-control', 'required', 'placeholder' => 'Ej: 123456789')) }}
                     <small class="form-text text-muted">
-                        <i class="fa fa-question-circle" aria-hidden="true"></i> Cedula.
+                        <i class="fa fa-question-circle" aria-hidden="true"></i> Número de cédula.
                     </small>
                 </div>
             </div>

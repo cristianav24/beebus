@@ -8,8 +8,10 @@ use App\Models\ParentChildRelationship;
 use App\Models\CreditTransaction;
 use App\Models\ParentProfile;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Crypt;
 use Auth;
 use DB;
+use Storage;
 
 class ParentDashboardController extends Controller
 {
@@ -200,5 +202,149 @@ class ParentDashboardController extends Controller
             ->paginate(20);
 
         return view('backend.parent.student-transactions', compact('student', 'transactions'));
+    }
+
+    public function studentProfile($studentId)
+    {
+        $user = Auth::user();
+
+        // Verificar que el padre tiene acceso a este estudiante
+        $relationship = ParentChildRelationship::where('parent_user_id', $user->id)
+            ->where('student_id', $studentId)
+            ->where('status', 'approved')
+            ->first();
+
+        if (!$relationship) {
+            abort(403, 'No tienes acceso a la información de este estudiante.');
+        }
+
+        $student = $relationship->student;
+        $qrData = Crypt::encryptString($student->id);
+
+        return view('backend.parent.student-profile', compact('student', 'qrData'));
+    }
+
+    public function uploadStudentContract(Request $request, $studentId)
+    {
+        $request->validate([
+            'contract_file' => 'required|file|mimes:pdf|max:5120', // 5MB max
+        ]);
+
+        $user = Auth::user();
+
+        // Verificar que el padre tiene acceso a este estudiante
+        $relationship = ParentChildRelationship::where('parent_user_id', $user->id)
+            ->where('student_id', $studentId)
+            ->where('status', 'approved')
+            ->first();
+
+        if (!$relationship) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No tienes acceso a este estudiante.'
+            ], 403);
+        }
+
+        $student = $relationship->student;
+
+        // Eliminar contrato anterior si existe
+        if ($student->contrato_url && file_exists(public_path($student->contrato_url))) {
+            unlink(public_path($student->contrato_url));
+        }
+
+        // Guardar nuevo contrato en public/contracts
+        $file = $request->file('contract_file');
+        $filename = 'contrato_' . $student->id . '_' . time() . '.pdf';
+
+        // Crear directorio si no existe
+        $contractsPath = public_path('contracts');
+        if (!file_exists($contractsPath)) {
+            mkdir($contractsPath, 0755, true);
+        }
+
+        // Mover archivo
+        $file->move($contractsPath, $filename);
+        $path = 'contracts/' . $filename;
+
+        // Actualizar registro
+        $student->update([
+            'contrato_subido' => 1,
+            'contrato_url' => $path,
+            'contrato_fecha_subida' => now(),
+            'contrato_subido_por' => $user->id,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Contrato subido correctamente.',
+            'fecha_subida' => now()->format('d/m/Y H:i')
+        ]);
+    }
+
+    public function downloadStudentContract($studentId)
+    {
+        $user = Auth::user();
+
+        // Verificar que el padre tiene acceso a este estudiante
+        $relationship = ParentChildRelationship::where('parent_user_id', $user->id)
+            ->where('student_id', $studentId)
+            ->where('status', 'approved')
+            ->first();
+
+        if (!$relationship) {
+            return back()->with('error', 'No tienes acceso a este estudiante.');
+        }
+
+        $student = $relationship->student;
+
+        if (!$student->contrato_url) {
+            return back()->with('error', 'Este estudiante no tiene contrato subido.');
+        }
+
+        $filePath = public_path($student->contrato_url);
+        if (!file_exists($filePath)) {
+            return back()->with('error', 'El archivo del contrato no existe.');
+        }
+
+        return response()->download($filePath, 'Contrato_' . $student->name . '.pdf');
+    }
+
+    public function getStudentQR($studentId)
+    {
+        $user = Auth::user();
+
+        // Verificar que el padre tiene acceso a este estudiante
+        $relationship = ParentChildRelationship::where('parent_user_id', $user->id)
+            ->where('student_id', $studentId)
+            ->where('status', 'approved')
+            ->first();
+
+        if (!$relationship) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No tienes acceso a este estudiante.'
+            ], 403);
+        }
+
+        $student = $relationship->student;
+        $qrData = Crypt::encryptString($student->id);
+
+        return response()->json([
+            'success' => true,
+            'qr_data' => $qrData,
+            'student_id' => $student->id,
+            'student_name' => $student->name
+        ]);
+    }
+
+    public function downloadContractTemplate()
+    {
+        $templatePath = public_path('templates/Contrato_Bee_Bus_2026.pdf');
+
+        if (!file_exists($templatePath)) {
+            return back()->with('error', 'El contrato template no está disponible. Contacta al administrador.');
+        }
+
+        return response()->download($templatePath, 'Contrato_Bee_Bus_2026.pdf');
     }
 }

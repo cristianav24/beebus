@@ -297,6 +297,25 @@ return [
             'icon' => 'fa fa-user',
             'role' => 'guest',
         ],
+        // Menú para estudiantes
+        [
+            'text' => 'Inicio',
+            'url'  => 'home',
+            'icon' => 'fa fa-home',
+            'role' => 'estudiante',
+        ],
+        [
+            'text' => 'Mi Dashboard',
+            'url'  => 'student/dashboard',
+            'icon' => 'fa fa-tachometer-alt',
+            'role' => 'estudiante',
+        ],
+        /*[
+            'text' => 'Mi Perfil',
+            'url'  => 'profile/details',
+            'icon' => 'fa fa-user',
+            'role' => 'estudiante',
+        ],*/
         [
             'text' => 'Asistencia',
             'url'  => 'attendances',
@@ -377,6 +396,23 @@ return [
             'role' => 'administrator|admin',
         ],
         [
+            'text' => 'Tarifas',
+            'icon' => 'fa fa-money-bill-wave',
+            'submenu' => [
+                [
+                    'text' => 'Lista',
+                    'url'  => 'tarifas',
+                    'icon' => 'fa fa-list-ul',
+                ],
+                [
+                    'text' => 'Agregar Tarifa',
+                    'url'  => 'tarifas/add',
+                    'icon' => 'fa fa-plus',
+                ],
+            ],
+            'role' => 'administrator|admin',
+        ],
+        [
             'text' => 'Analitica',
             'url'  => 'analytic',
             'icon' => 'fa fa-chart-area',
@@ -398,12 +434,6 @@ return [
                 ],
             ],
             'role' => 'administrator',
-        ],
-        [
-            'text' => 'Recargar Créditos',
-            'url'  => 'credits/recharge',
-            'icon' => 'fa fa-credit-card',
-            'role' => 'administrator|admin|staff',
         ],
         [
             'text' => 'Ajustes',
@@ -433,6 +463,12 @@ return [
             'text' => 'Solicitudes de Padres',
             'url'  => 'admin/parent-requests',
             'icon' => 'fa fa-user-check',
+            'role' => 'administrator|admin',
+        ],
+        [
+            'text' => 'Vincular Estudiantes',
+            'url'  => 'admin/student-user-link',
+            'icon' => 'fa fa-link',
             'role' => 'administrator|admin',
         ],
 

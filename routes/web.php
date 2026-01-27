@@ -76,7 +76,7 @@ Route::group(['middleware' => ['role:administrator|admin|estudiante|guest']], fu
     Route::GET('/attendances', 'Backend\Attendance\AttendanceController@index')->name('attendances');
 
     // Credits routes
-    Route::GET('/credits/recharge', 'Backend\Credits\CreditsController@recharge')->name('credits.recharge');
+    //Route::GET('/credits/recharge', 'Backend\Credits\CreditsController@recharge')->name('credits.recharge');
     Route::POST('/credits/store', 'Backend\Credits\CreditsController@store')->name('credits.store');
 });
 
@@ -95,6 +95,7 @@ Route::group(['middleware' => ['role:administrator|admin']], function () {
     Route::GET('/histories/delete/{id}', 'Backend\History\HistoryController@delete')->name('histories.delete');
     Route::post('/histories/set-inactive', 'Backend\History\HistoryController@setInactive')->name('histories.setInactive');
     Route::post('/histories/set-active', 'Backend\History\HistoryController@setActive')->name('histories.setActive');
+    Route::GET('/histories/download-contract/{id}', 'Backend\History\HistoryController@downloadContract')->name('histories.download-contract');
 
     Route::GET('/histories/import', 'Backend\History\HistoryController@import')->name('histories.import');
     Route::POST('/histories/importData', 'Backend\History\HistoryController@importData')->name('histories.importData');
@@ -115,6 +116,15 @@ Route::group(['middleware' => ['role:administrator|admin']], function () {
     Route::GET('/becas/edit/{id}', 'Backend\Beca\BecaController@edit')->name('becas.edit');
     Route::POST('/becas/update', 'Backend\Beca\BecaController@update')->name('becas.update');
     Route::GET('/becas/delete/{id}', 'Backend\Beca\BecaController@delete')->name('becas.delete');
+
+    // Tarifas Routes
+    Route::GET('/tarifas', 'Backend\Tarifa\TarifaController@index')->name('tarifas.index');
+    Route::GET('/tarifas/add', 'Backend\Tarifa\TarifaController@add')->name('tarifas.add');
+    Route::POST('/tarifas/create', 'Backend\Tarifa\TarifaController@create')->name('tarifas.create');
+    Route::GET('/tarifas/edit/{id}', 'Backend\Tarifa\TarifaController@edit')->name('tarifas.edit');
+    Route::POST('/tarifas/update', 'Backend\Tarifa\TarifaController@update')->name('tarifas.update');
+    Route::GET('/tarifas/{id}/students', 'Backend\Tarifa\TarifaController@viewStudents')->name('tarifas.students');
+    Route::GET('/tarifas/delete/{id}', 'Backend\Tarifa\TarifaController@delete')->name('tarifas.delete');
 });
 
 Route::post('reinputkey/index/{code}', 'Utils\Activity\ReinputKeyController@index');
@@ -145,10 +155,31 @@ Route::group(['middleware' => ['role:guest']], function () {
     // Student Transactions
     Route::GET('/parent/student/{studentId}/transactions', 'Backend\Parent\ParentDashboardController@studentTransactions')->name('parent.student-transactions');
 
+    // Student Profile & QR Management
+    Route::GET('/parent/student/{studentId}/profile', 'Backend\Parent\ParentDashboardController@studentProfile')->name('parent.student-profile');
+    Route::GET('/parent/download-contract-template', 'Backend\Parent\ParentDashboardController@downloadContractTemplate')->name('parent.download-contract-template');
+    Route::POST('/parent/student/{studentId}/upload-contract', 'Backend\Parent\ParentDashboardController@uploadStudentContract')->name('parent.student.upload-contract');
+    Route::GET('/parent/student/{studentId}/download-contract', 'Backend\Parent\ParentDashboardController@downloadStudentContract')->name('parent.student.download-contract');
+    Route::GET('/parent/student/{studentId}/qr', 'Backend\Parent\ParentDashboardController@getStudentQR')->name('parent.student.qr');
+
     // PayMe Payment Routes for Guest Role
     Route::GET('/parent/recharge-credits', 'Backend\Payment\PayMeController@showRechargeForm')->name('parent.recharge-credits');
     Route::POST('/parent/payme/initialize', 'Backend\Payment\PayMeController@initializePayment')->name('parent.payme.initialize');
     Route::GET('/parent/payment-history', 'Backend\Payment\PayMeController@getPaymentHistory')->name('parent.payment-history');
+});
+
+/*
+|--------------------------------------------------------------------------
+| estudiante
+|--------------------------------------------------------------------------
+*/
+Route::group(['middleware' => ['role:estudiante']], function () {
+    // Student Dashboard
+    Route::GET('/student/dashboard', 'Backend\Student\StudentDashboardController@index')->name('student.dashboard');
+    Route::GET('/student/download-contract-template', 'Backend\Student\StudentDashboardController@downloadContractTemplate')->name('student.download-contract-template');
+    Route::POST('/student/upload-contract', 'Backend\Student\StudentDashboardController@uploadContract')->name('student.upload-contract');
+    Route::GET('/student/download-contract', 'Backend\Student\StudentDashboardController@downloadContract')->name('student.download-contract');
+    Route::GET('/student/download-qr', 'Backend\Student\StudentDashboardController@downloadQR')->name('student.download-qr');
 });
 
 /*
@@ -185,4 +216,11 @@ Route::group(['middleware' => ['role:administrator|admin']], function () {
     Route::GET('/admin/transactions/{id}', 'Backend\Transaction\TransactionController@show')->name('transactions.show');
     Route::PATCH('/admin/transactions/{id}/verify', 'Backend\Transaction\TransactionController@verify')->name('transactions.verify');
     Route::PATCH('/admin/transactions/{id}/reject', 'Backend\Transaction\TransactionController@reject')->name('transactions.reject');
+
+    // Student-User Link Tool (for linking histories with users)
+    Route::GET('/admin/student-user-link', 'Backend\Admin\StudentUserLinkController@index')->name('admin.student-user-link');
+    Route::GET('/admin/student-user-link/search', 'Backend\Admin\StudentUserLinkController@searchUsers')->name('admin.student-user-link.search');
+    Route::POST('/admin/student-user-link/link', 'Backend\Admin\StudentUserLinkController@linkUser')->name('admin.student-user-link.link');
+    Route::POST('/admin/student-user-link/create', 'Backend\Admin\StudentUserLinkController@createUserForStudent')->name('admin.student-user-link.create');
+    Route::POST('/admin/student-user-link/auto', 'Backend\Admin\StudentUserLinkController@autoLinkAll')->name('admin.student-user-link.auto');
 });

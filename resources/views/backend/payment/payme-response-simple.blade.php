@@ -324,6 +324,51 @@
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // Datos del resultado del pago para Flutter WebView
+        var paymentResult = {
+            success: {{ $success ? 'true' : 'false' }},
+            message: "{{ addslashes($message ?? '') }}",
+            @if($success)
+            data: {
+                student_name: "{{ addslashes($data['student_name'] ?? '') }}",
+                amount: {{ $data['amount'] ?? 0 }},
+                previous_balance: {{ $data['previous_balance'] ?? 0 }},
+                new_balance: {{ $data['new_balance'] ?? 0 }},
+                authorization_code: "{{ $data['authorization_code'] ?? '' }}",
+                operation_number: "{{ $data['operation_number'] ?? '' }}"
+            }
+            @else
+            data: {
+                error_code: "{{ $data['error_code'] ?? '' }}",
+                error_message: "{{ addslashes($data['error_message'] ?? '') }}",
+                is_cancellation: {{ (isset($is_cancellation) && $is_cancellation) ? 'true' : 'false' }}
+            }
+            @endif
+        };
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Flutter InAppWebView - JavaScript Handler
+            if (window.flutter_inappwebview) {
+                window.flutter_inappwebview.callHandler('paymentResult', paymentResult);
+            }
+
+            // Alternativa: Cambiar URL para que Flutter lo intercepte
+            // Flutter puede detectar cuando la URL contiene 'payment-complete'
+            if (window.location.search.indexOf('notify_app') === -1) {
+                var newUrl = window.location.href + (window.location.search ? '&' : '?') +
+                    'notify_app=1&payment_success=' + paymentResult.success +
+                    '&payment_data=' + encodeURIComponent(JSON.stringify(paymentResult));
+                history.replaceState(null, '', newUrl);
+            }
+        });
+
+        // Exponer globalmente para que Flutter pueda llamarlo
+        window.getPaymentResult = function() {
+            return JSON.stringify(paymentResult);
+        };
+    </script>
 </body>
 
 </html>

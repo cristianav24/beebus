@@ -11,7 +11,6 @@ class Setting extends BaseSetting
 		'out_time',
 		'key_app',
         'timezone',
-        'charge_per_day',
         'status'
     ];
 }

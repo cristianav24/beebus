@@ -12,9 +12,9 @@
 @section('classes_body', 'login-page')
 
 @section('body')
-    <div class="login-box" style="width: 700px; margin-top: 20px;">
+    <div class="login-box third-party-box">
         <div class="login-logo">
-            <img src="https://greenland.ga/logo/logo2.png" alt="BeeBus" height="130" width="300" style="opacity: .8">
+            <img src="https://greenland.ga/logo/logo2.png" alt="BeeBus" class="logo-img" style="opacity: .8">
         </div>
 
         @if($success)
@@ -198,6 +198,24 @@
     <script src="{{ asset('vendor/adminlte/dist/js/adminlte.min.js') }}"></script>
 
     <style>
+        .third-party-box {
+            width: 100%;
+            max-width: 700px;
+            padding: 0 15px;
+            margin: 20px auto;
+        }
+
+        .logo-img {
+            max-width: 100%;
+            height: auto;
+            max-height: 130px;
+        }
+
+        .login-logo {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
         .card {
             box-shadow: 0 0 1px rgba(0,0,0,.125), 0 1px 3px rgba(0,0,0,.2);
             border-radius: 10px;
@@ -226,6 +244,130 @@
         .btn-lg {
             padding: 10px 30px;
             font-size: 1.1rem;
+        }
+
+        /* Responsive Styles */
+        @media (max-width: 576px) {
+            .third-party-box {
+                padding: 0 10px;
+                margin-top: 10px;
+            }
+
+            .logo-img {
+                max-height: 80px;
+                width: auto;
+            }
+
+            .card-header h3.card-title {
+                font-size: 0.95rem;
+            }
+
+            .card-body {
+                padding: 1rem;
+            }
+
+            /* Success/Error Icon */
+            .text-center i[style*="font-size: 72px"] {
+                font-size: 50px !important;
+            }
+
+            .text-center h3 {
+                font-size: 1.25rem;
+            }
+
+            /* Info Boxes */
+            .info-box {
+                min-height: 70px;
+                margin-bottom: 10px;
+            }
+
+            .info-box-icon {
+                width: 60px;
+                font-size: 1.2rem;
+            }
+
+            .info-box-content {
+                padding: 8px 10px;
+            }
+
+            .info-box-text {
+                font-size: 0.8rem;
+            }
+
+            .info-box-number {
+                font-size: 0.9rem !important;
+            }
+
+            /* Transaction Details Table */
+            .table th, .table td {
+                font-size: 0.85rem;
+                padding: 0.5rem;
+            }
+
+            .table th {
+                width: 45% !important;
+            }
+
+            /* Callout */
+            .callout {
+                padding: 10px;
+            }
+
+            .callout h5 {
+                font-size: 1rem;
+            }
+
+            .callout ul {
+                padding-left: 20px;
+                margin-bottom: 0;
+            }
+
+            .callout li {
+                font-size: 0.9rem;
+            }
+
+            /* Alert */
+            .alert {
+                padding: 0.75rem;
+                font-size: 0.9rem;
+            }
+
+            /* Action Buttons */
+            .text-center.mt-4 {
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .btn-lg {
+                padding: 0.75rem 1.5rem;
+                font-size: 1rem;
+                width: 100%;
+            }
+
+            /* Row columns on mobile */
+            .row > .col-md-6 {
+                margin-bottom: 10px;
+            }
+        }
+
+        @media (max-width: 400px) {
+            .logo-img {
+                max-height: 60px;
+            }
+
+            .info-box-icon {
+                width: 50px;
+                font-size: 1rem;
+            }
+
+            .info-box-number {
+                font-size: 0.85rem !important;
+            }
+
+            .card-header h3.card-title {
+                font-size: 0.85rem;
+            }
         }
     </style>
 @stop

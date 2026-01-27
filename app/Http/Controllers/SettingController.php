@@ -19,7 +19,6 @@ class SettingController extends Controller
             'out_time' => 'required',
             'key_app' => 'required|unique:settings,key_app',
             'timezone' => 'required',
-            'charge_per_day' => 'nullable|integer|min:0',
             'status' => 'required|in:activo,inactivo'
         ]);
 

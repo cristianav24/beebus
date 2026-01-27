@@ -32,6 +32,10 @@ class User extends \App\Models\Base\User implements AuthenticatableContract, Aut
 
 	protected $fillable = [
 		'name',
+		'first_name',
+		'last_name',
+		'second_last_name',
+		'cedula',
 		'email',
 		'email_verified_at',
 		'password',
@@ -39,6 +43,22 @@ class User extends \App\Models\Base\User implements AuthenticatableContract, Aut
         'image',
         'role',
 	];
+
+	/**
+	 * Get the full name attribute
+	 */
+	public function getFullNameAttribute()
+	{
+		return trim($this->first_name . ' ' . $this->last_name . ' ' . $this->second_last_name);
+	}
+
+	/**
+	 * Get the student (history) associated with this user
+	 */
+	public function history()
+	{
+		return $this->hasOne(History::class, 'user_id');
+	}
 
 	// Function get user image from database
 	public function adminlte_image() {

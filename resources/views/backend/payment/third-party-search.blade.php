@@ -4,17 +4,12 @@
     <link rel="stylesheet" href="{{ asset('vendor/icheck-bootstrap/icheck-bootstrap.min.css') }}">
 @stop
 
-@section('adminlte_css')
-    @stack('css')
-    @yield('css')
-@stop
-
 @section('classes_body', 'login-page')
 
 @section('body')
-    <div class="login-box" style="width: 500px;">
+    <div class="login-box third-party-box">
         <div class="login-logo">
-            <img src="https://greenland.ga/logo/logo2.png" alt="BeeBus" height="130" width="300" style="opacity: .8">
+            <img src="https://greenland.ga/logo/logo2.png" alt="BeeBus" class="logo-img" style="opacity: .8">
         </div>
         <div class="card">
             <div class="card-header bg-primary">
@@ -111,6 +106,80 @@
             </div>
         </div>
     </div>
+@stop
+
+@section('adminlte_css')
+    @stack('css')
+    @yield('css')
+    <style>
+        .third-party-box {
+            width: 100%;
+            max-width: 500px;
+            padding: 0 15px;
+            margin: 20px auto;
+        }
+
+        .logo-img {
+            max-width: 100%;
+            height: auto;
+            max-height: 130px;
+        }
+
+        .login-logo {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            box-shadow: 0 0 1px rgba(0,0,0,.125), 0 1px 3px rgba(0,0,0,.2);
+            border-radius: 10px;
+        }
+
+        #studentResult .row {
+            margin: 0 -5px;
+        }
+
+        #studentResult .row > div {
+            padding: 0 5px;
+        }
+
+        @media (max-width: 576px) {
+            .third-party-box {
+                padding: 0 10px;
+                margin-top: 10px;
+            }
+
+            .logo-img {
+                max-height: 100px;
+                width: auto;
+            }
+
+            .card-header h3.card-title {
+                font-size: 1rem;
+            }
+
+            .card-body {
+                padding: 1rem;
+            }
+
+            #studentResult .col-md-6 {
+                margin-bottom: 10px;
+            }
+
+            #studentResult .alert h5 {
+                font-size: 1rem;
+            }
+
+            .btn-block {
+                padding: 0.75rem 1rem;
+            }
+
+            .btn-lg {
+                font-size: 1rem;
+                padding: 0.75rem 1.5rem;
+            }
+        }
+    </style>
 @stop
 
 @section('adminlte_js')

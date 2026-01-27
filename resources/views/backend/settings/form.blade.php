@@ -107,16 +107,6 @@
 
                         <div class="form-group row">
                             <div class="col-sm-2 col-form-label">
-                                <strong class="field-title">Tarifa por día</strong>
-                            </div>
-                            <div class="col-sm-10 col-content">
-                                {{ Form::number('charge_per_day', $rowDataSettings['charge_per_day'] ?? 0, array('class' => 'form-control', 'min' => '0', 'id' => 'charge_per_day')) }}
-                                <p class="form-text text-muted">Tarifa que se cobra por día de servicio</p>
-                            </div>
-                        </div>
-
-                        <div class="form-group row">
-                            <div class="col-sm-2 col-form-label">
                                 <strong class="field-title">Estado</strong>
                             </div>
                             <div class="col-sm-10 col-content">
@@ -300,10 +290,6 @@
                             <div class="form-group">
                                 <label for="timezone">Pais</label>
                                 <input type="text" class="form-control" id="timezone" name="timezone" value="America/Costa_Rica">
-                            </div>
-                            <div class="form-group">
-                                <label for="charge_per_day">Tarifa por día</label>
-                                <input type="number" class="form-control" id="charge_per_day" name="charge_per_day" min="0" value="0">
                             </div>
                             <div class="form-group">
                                 <label for="status">Estado</label>

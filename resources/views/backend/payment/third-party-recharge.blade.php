@@ -14,9 +14,9 @@
 @section('classes_body', 'login-page')
 
 @section('body')
-    <div class="login-box" style="width: 600px; margin-top: 20px;">
+    <div class="login-box third-party-box">
         <div class="login-logo">
-            <img src="https://greenland.ga/logo/logo2.png" alt="BeeBus" height="130" width="300" style="opacity: .8">
+            <img src="https://greenland.ga/logo/logo2.png" alt="BeeBus" class="logo-img" style="opacity: .8">
         </div>
         <div class="card">
             <div class="card-header bg-success">
@@ -520,6 +520,29 @@
     </script>
 
     <style>
+        .third-party-box {
+            width: 100%;
+            max-width: 600px;
+            padding: 0 15px;
+            margin: 20px auto;
+        }
+
+        .logo-img {
+            max-width: 100%;
+            height: auto;
+            max-height: 130px;
+        }
+
+        .login-logo {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            box-shadow: 0 0 1px rgba(0,0,0,.125), 0 1px 3px rgba(0,0,0,.2);
+            border-radius: 10px;
+        }
+
         .amount-btn.active {
             background-color: #007bff;
             color: white;
@@ -553,6 +576,124 @@
 
         #terms-section a:hover {
             color: #0056b3;
+        }
+
+        /* Responsive Styles */
+        @media (max-width: 576px) {
+            .third-party-box {
+                padding: 0 10px;
+                margin-top: 10px;
+            }
+
+            .logo-img {
+                max-height: 80px;
+                width: auto;
+            }
+
+            .card-header h3.card-title {
+                font-size: 0.95rem;
+            }
+
+            .card-body {
+                padding: 1rem;
+            }
+
+            /* Student Info Section */
+            .alert-info h5 {
+                font-size: 1rem;
+            }
+
+            .alert-info .row .col-md-6 {
+                margin-bottom: 8px;
+            }
+
+            .badge-lg {
+                font-size: 0.95rem;
+                padding: 0.4rem 0.8rem;
+            }
+
+            /* Payer Info Fields */
+            .form-group label {
+                font-size: 0.9rem;
+            }
+
+            .input-group .form-control {
+                font-size: 0.9rem;
+            }
+
+            /* Amount Buttons */
+            .amount-btn {
+                font-size: 0.85rem;
+                padding: 0.5rem 0.25rem;
+            }
+
+            /* Selected Amount Display */
+            #selected-amount-display h5 {
+                font-size: 1.1rem;
+            }
+
+            #selected-amount-display p {
+                font-size: 0.9rem;
+            }
+
+            /* Action Buttons */
+            .row.mt-3 .col-md-6 {
+                margin-bottom: 10px;
+            }
+
+            .btn-block {
+                padding: 0.6rem 1rem;
+                font-size: 0.9rem;
+            }
+
+            /* Terms Section */
+            #terms-section .custom-control-label {
+                font-size: 0.9rem;
+            }
+
+            /* Terms Modal */
+            #termsModal .modal-dialog {
+                margin: 10px;
+            }
+
+            #termsModal .modal-body {
+                padding: 1rem;
+                max-height: 60vh;
+            }
+
+            #termsModal h5 {
+                font-size: 1rem;
+            }
+
+            #termsModal p, #termsModal li {
+                font-size: 0.9rem;
+            }
+
+            #termsModal .modal-footer {
+                padding: 0.75rem;
+                flex-wrap: wrap;
+                gap: 10px;
+            }
+
+            #termsModal .modal-footer .btn {
+                flex: 1;
+                min-width: 120px;
+            }
+        }
+
+        @media (max-width: 400px) {
+            .logo-img {
+                max-height: 60px;
+            }
+
+            .amount-btn {
+                font-size: 0.8rem;
+                padding: 0.4rem 0.2rem;
+            }
+
+            .card-header h3.card-title {
+                font-size: 0.85rem;
+            }
         }
     </style>
 @stop

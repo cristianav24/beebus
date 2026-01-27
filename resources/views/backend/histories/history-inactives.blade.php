@@ -44,18 +44,18 @@
     <script src="{{ asset('vendor/datatables-plugins/buttons/js/buttons.print.js') }}"></script>
     {!! $html->scripts() !!}
     <script src="{{ asset('js/main_index.js'). '?v=' . rand(99999,999999) }}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
     <script>
     function confirmActive(history_id) {
         if (confirm(`Estas seguro de que deseas activar a este usuario? ${history_id}`)) {
             $.ajax({
-                url: '/histories/set-active', // Ruta en Laravel
+                url: '/histories/set-active',
                 method: 'POST',
                 data: {
-                    _token: '{{ csrf_token() }}', // Token CSRF para protecci贸n
-                    id: history_id // Enviar el ID del item
+                    _token: '{{ csrf_token() }}',
+                    id: history_id
                 },
                 success: function(response) {
-                    // Manejar la respuesta exitosa
                     if (response.success) {
                         alert('Se actualizo correctamente.');
                         location.reload();
@@ -64,12 +64,29 @@
                     }
                 },
                 error: function(xhr, status, error) {
-                    // Manejar el error
                     alert('An error occurred. Please try again.');
                 }
             });
         }
     }
+
+    // Descargar QR al hacer click en el botón
+    $(document).on('click', '.btn-qr-download', function() {
+        var qrData = $(this).data('qr');
+        var studentId = $(this).data('id');
+
+        var qr = qrcode(0, 'M');
+        qr.addData(qrData);
+        qr.make();
+
+        var qrImage = qr.createDataURL(4);
+        var link = document.createElement('a');
+        link.href = qrImage;
+        link.download = 'qr_estudiante_' + studentId + '.png';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    });
     </script>
 
 @stop

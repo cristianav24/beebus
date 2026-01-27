@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Backend\Users;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Utils\Activity\SaveActivityLogController;
 use App\Models\History;
+use App\Models\ParentProfile;
 use App\Models\Role;
 use App\Models\User;
 use Auth;
@@ -40,42 +41,52 @@ class UsersController extends Controller
             'id' => ['title' => 'N°.', 'orderable' => false, 'searchable' => false, 'render' => function () {
                 return 'function(data,type,fullData,meta){return meta.settings._iDisplayStart+meta.row+1;}';
             }],
-            'image' => ['title' => 'Imagen'],
-            'name' => ['title' => 'Nombre'],
-            'cedula',
-            'colegio',
-            'seccion',
-            'email' ,
-            'role',
+            'image' => ['title' => 'Imagen', 'orderable' => false, 'searchable' => false],
+            'full_name' => ['title' => 'Nombre', 'name' => 'name'],
+            'cedula' => ['title' => 'Cédula', 'name' => 'cedula'],
+            'email',
+            'role_name' => ['title' => 'Role', 'name' => 'roles.display_name'],
             'created_at' => ['title' => 'Creado el'],
-            'updated_at' => ['title' => 'Actualizado el'],
             'action' => ['orderable' => false, 'searchable' => false],
         ];
 
         if ($datatables->getRequest()->ajax()) {
-            return $datatables->of(User::all())
+            // Usar Query Builder en lugar de all() para server-side processing real
+            $query = User::select('users.*', 'roles.display_name as role_name')
+                ->leftJoin('roles', 'users.role', '=', 'roles.id');
+
+            return $datatables->of($query)
                 ->addColumn('image', function (User $data) {
                     $getAssetFolder = asset('uploads/' . $data->image);
                     return '<img src="' . $getAssetFolder . '" width="30px" class="img-circle elevation-2">';
+                })
+                ->addColumn('full_name', function (User $data) {
+                    return $data->full_name ?: $data->name;
                 })
                 ->addColumn('action', function (User $data) {
                     $routeEdit = route($this->getRoute() . '.edit', $data->id);
                     $routeDelete = route($this->getRoute() . '.delete', $data->id);
 
-                    // Check is administrator
                     if (Auth::user()->hasRole('administrator')) {
-                        $button = '<a href="' . $routeEdit . '"><button class="btn btn-primary"><i class="fa fa-edit"></i></button></a> ';
-                        $button .= '<a href="' . $routeDelete . '" class="delete-button"><button class="btn btn-danger"><i class="fa fa-trash"></i></button></a>';
+                        $button = '<a href="' . $routeEdit . '" title="Editar"><button class="btn btn-sm btn-primary"><i class="fa fa-edit"></i></button></a> ';
+                        $button .= '<a href="' . $routeDelete . '" class="delete-button" title="Eliminar"><button class="btn btn-sm btn-danger"><i class="fa fa-trash"></i></button></a>';
                     } else {
-                        $button = '<a href="#"><button class="btn btn-primary disabled"><i class="fa fa-edit"></i></button></a> ';
-                        $button .= '<a href="#"><button class="btn btn-danger disabled"><i class="fa fa-trash"></i></button></a>';
+                        $button = '<button class="btn btn-sm btn-primary disabled"><i class="fa fa-edit"></i></button> ';
+                        $button .= '<button class="btn btn-sm btn-danger disabled"><i class="fa fa-trash"></i></button>';
                     }
                     return $button;
                 })
-                ->addColumn('role', function (User $user) {
-                    return Role::where('id', $user->role)->first()->display_name;
+                ->filterColumn('full_name', function($query, $keyword) {
+                    $query->where(function($q) use ($keyword) {
+                        $q->where('users.name', 'like', "%{$keyword}%")
+                          ->orWhere('users.first_name', 'like', "%{$keyword}%")
+                          ->orWhere('users.last_name', 'like', "%{$keyword}%");
+                    });
                 })
-                ->rawColumns(['action', 'image', 'intro'])
+                ->editColumn('created_at', function (User $data) {
+                    return $data->created_at ? $data->created_at->format('d/m/Y H:i') : '';
+                })
+                ->rawColumns(['action', 'image'])
                 ->toJson();
         }
 
@@ -84,12 +95,31 @@ class UsersController extends Controller
             ->parameters([
                 'responsive' => true,
                 'autoWidth' => false,
+                'processing' => true,
+                'serverSide' => true,
+                'order' => [[0, 'desc']],
                 'lengthMenu' => [
-                    [10, 25, 50, -1],
-                    ['10 rows', '25 rows', '50 rows', 'Show all'],
+                    [10, 25, 50, 100],
+                    ['10', '25', '50', '100'],
                 ],
                 'dom' => 'Bfrtip',
                 'buttons' => ['pageLength', 'csv', 'excel', 'pdf', 'print'],
+                'language' => [
+                    'processing' => 'Cargando...',
+                    'search' => 'Buscar:',
+                    'lengthMenu' => 'Mostrar _MENU_ registros',
+                    'info' => 'Mostrando _START_ a _END_ de _TOTAL_ registros',
+                    'infoEmpty' => 'Mostrando 0 a 0 de 0 registros',
+                    'infoFiltered' => '(filtrado de _MAX_ registros totales)',
+                    'zeroRecords' => 'No se encontraron registros',
+                    'emptyTable' => 'No hay datos disponibles',
+                    'paginate' => [
+                        'first' => 'Primero',
+                        'previous' => 'Anterior',
+                        'next' => 'Siguiente',
+                        'last' => 'Último'
+                    ]
+                ]
             ]);
 
         return view('backend.users.index', compact('html'));
@@ -141,6 +171,10 @@ class UsersController extends Controller
     public function create(Request $request)
     {
         $new = $request->all();
+
+        // Construir el nombre completo a partir de los campos individuales
+        $new['name'] = trim($new['first_name'] . ' ' . $new['last_name'] . ' ' . ($new['second_last_name'] ?? ''));
+
         $this->validator($new, 'create')->validate();
         try {
             $new['password'] = bcrypt($new['password']);
@@ -152,40 +186,66 @@ class UsersController extends Controller
                 // upload image
                 if ($request->hasFile('image')) {
                     $file = $request->file('image');
-                    // image file name example: [news_id]_image.jpg
                     ${'image'} = $createNew->id . "_image." . $file->getClientOriginalExtension();
-                    // save image to the path
                     $file->move(Config::get('const.UPLOAD_PATH'), ${'image'});
                     $createNew->{'image'} = ${'image'};
                 } else {
                     $createNew->{'image'} = 'default-user.png';
                 }
 
-                // If user create with 2 or 3 means admin or staff, will save the QR history also
-                if ($new['role'] == 2 || $new['role'] == 3) {
+                // Si es estudiante (role=3), crear History con status=2 (pendiente)
+                if ($new['role'] == 3) {
+                    $historyData = [
+                        'user_id' => $createNew->id,
+                        'name' => $new['name'],
+                        'first_name' => $new['first_name'],
+                        'last_name' => $new['last_name'],
+                        'second_last_name' => $new['second_last_name'] ?? null,
+                        'cedula' => $new['cedula'] ?? '',
+                        'email' => $new['email'],
+                        'status' => 2,
+                        'creditos' => 0,
+                        'cuantoRestar' => 0,
+                        'chancesParaMarcar' => 0,
+                    ];
+                    History::create($historyData);
+
+                    $controller = new SaveActivityLogController();
+                    $controller->saveLog($historyData, "Create new student (pending)");
+                }
+
+                // Si es conductor (role=2), crear History con status=1
+                if ($new['role'] == 2) {
+                    $new['status'] = 1;
                     History::create($new);
 
-                    // Save log
                     $controller = new SaveActivityLogController();
                     $controller->saveLog($new, "Create new history QR");
                 }
 
-                // Save user
+                // Si es padre (role=4), crear ParentProfile
+                if ($new['role'] == 4) {
+                    ParentProfile::create([
+                        'user_id' => $createNew->id,
+                        'cedula' => $new['cedula'] ?? '',
+                    ]);
+
+                    $controller = new SaveActivityLogController();
+                    $controller->saveLog(['user_id' => $createNew->id, 'cedula' => $new['cedula'] ?? ''], "Create new parent profile");
+                }
+
                 $createNew->save();
 
-                // Save log
                 $controller = new SaveActivityLogController();
                 $controller->saveLog($new, "Create new user");
 
-                // Create is successful, back to list
                 return redirect()->route($this->getRoute())->with('success', Config::get('const.SUCCESS_CREATE_MESSAGE'));
             }
 
-            // Create is failed
             return redirect()->route($this->getRoute())->with('error', Config::get('const.FAILED_CREATE_MESSAGE'));
-        } catch (Exception $e) {
-            // Create is failed
-            return redirect()->route($this->getRoute())->with('error', Config::get('const.FAILED_CREATE_MESSAGE'));
+        } catch (\Exception $e) {
+            \Log::error('Error creating user: ' . $e->getMessage());
+            return redirect()->route($this->getRoute())->with('error', Config::get('const.FAILED_CREATE_MESSAGE') . ' - ' . $e->getMessage());
         }
     }
 
@@ -198,13 +258,14 @@ class UsersController extends Controller
      */
     protected function validator(array $data, $type)
     {
-        // Determine if password validation is required depending on the calling
         return Validator::make($data, [
-            // Add unique validation to prevent for duplicate email while forcing unique rule to ignore a given ID
+            'first_name' => 'required|string|max:100',
+            'last_name' => 'required|string|max:100',
+            'second_last_name' => 'nullable|string|max:100',
+            'cedula' => 'required|string|max:50',
             'email' => $type == 'create' ? 'email|required|string|max:255|unique:users' : 'required|string|max:255|unique:users,email,' . $data['id'],
-            // (update: not required, create: required)
             'password' => $type == 'create' ? 'required|string|min:6|max:255' : '',
-            'name' => $type == 'create' ? 'required|string|max:255|unique:histories,name' : (($data['old_role'] == 1 || $data['old_role'] == 4) ? 'required|string|max:255' : 'required|string|max:255|unique:histories,name,' . $data['qr_id']),
+            'name' => $type == 'create' ? 'required|string|max:255|unique:histories,name' : (($data['old_role'] == 1 || $data['old_role'] == 4) ? 'required|string|max:255' : 'required|string|max:255|unique:histories,name,' . ($data['qr_id'] ?? 0)),
         ]);
     }
 
@@ -222,10 +283,9 @@ class UsersController extends Controller
         $data->page_type = 'edit';
         $data->button_text = 'Edit';
 
-        // Get history id by name
-        $getHistory = History::where('name', $data->name)
-            ->first();
-        $getHistory ? $data->qr_id = $getHistory->id : 0;
+        // Get history id by user_id
+        $getHistory = History::where('user_id', $data->id)->first();
+        $data->qr_id = $getHistory ? $getHistory->id : 0;
 
         if (Auth::user()->hasRole('administrator')) {
             return view('backend.users.form', [
@@ -249,6 +309,10 @@ class UsersController extends Controller
     public function update(Request $request)
     {
         $new = $request->all();
+
+        // Construir el nombre completo a partir de los campos individuales
+        $new['name'] = trim($new['first_name'] . ' ' . $new['last_name'] . ' ' . ($new['second_last_name'] ?? ''));
+
         try {
             $currentData = User::find($request->get('id'));
             $new['old_role'] = $currentData->role;
@@ -288,18 +352,20 @@ class UsersController extends Controller
                     $new['image'] = 'default-user.png';
                 }
 
-                // If user update role 2 or 3 means admin or staff will upadate also the history QR
-                if ($request->has('qr_id') && ($new['role'] == 2 || $new['role'] == 3)) {
-                    $currentDataHistory = History::find($request->get('qr_id'));
+                // Si el usuario tiene un history relacionado, sincronizar datos
+                $relatedHistory = History::where('user_id', $currentData->id)->first();
+                if ($relatedHistory) {
+                    $relatedHistory->name = $new['name'];
+                    $relatedHistory->first_name = $new['first_name'];
+                    $relatedHistory->last_name = $new['last_name'];
+                    $relatedHistory->second_last_name = $new['second_last_name'] ?? null;
+                    $relatedHistory->cedula = $new['cedula'];
+                    $relatedHistory->email = $new['email'];
+                    $relatedHistory->save();
 
-                    if ($currentDataHistory) {
-                        // Update
-                        $currentDataHistory->update($new);
-
-                        // Save log
-                        $controller = new SaveActivityLogController();
-                        $controller->saveLog($new, "Update history QR");
-                    }
+                    // Save log
+                    $controller = new SaveActivityLogController();
+                    $controller->saveLog($new, "Update history QR (sync from user)");
                 }
 
                 // Update

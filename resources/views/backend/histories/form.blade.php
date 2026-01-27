@@ -22,12 +22,40 @@
 
         <div class="form-group row">
             <div class="col-sm-2 col-form-label">
-                <strong class="field-title">Nombre</strong>
+                <strong class="field-title">Nombre(s)</strong>
             </div>
             <div class="col-sm-10 col-content">
-                {{ Form::text('name', $data->name, array('class' => 'form-control', 'required')) }}
+                {{ Form::text('first_name', $data->first_name, array('class' => 'form-control', 'required', 'placeholder' => 'Ej: Juan Pablo')) }}
                 <small class="form-text text-muted">
-                    <i class="fa fa-question-circle" aria-hidden="true"></i> Nombre del Estudiante o Usuario.
+                    <i class="fa fa-question-circle" aria-hidden="true"></i> Nombre o nombres del estudiante.
+                </small>
+            </div>
+        </div>
+
+        <br>
+
+        <div class="form-group row">
+            <div class="col-sm-2 col-form-label">
+                <strong class="field-title">Primer Apellido</strong>
+            </div>
+            <div class="col-sm-10 col-content">
+                {{ Form::text('last_name', $data->last_name, array('class' => 'form-control', 'required', 'placeholder' => 'Ej: Mora')) }}
+                <small class="form-text text-muted">
+                    <i class="fa fa-question-circle" aria-hidden="true"></i> Primer apellido.
+                </small>
+            </div>
+        </div>
+
+        <br>
+
+        <div class="form-group row">
+            <div class="col-sm-2 col-form-label">
+                <strong class="field-title">Segundo Apellido</strong>
+            </div>
+            <div class="col-sm-10 col-content">
+                {{ Form::text('second_last_name', $data->second_last_name, array('class' => 'form-control', 'placeholder' => 'Ej: Pérez (opcional)')) }}
+                <small class="form-text text-muted">
+                    <i class="fa fa-question-circle" aria-hidden="true"></i> Segundo apellido (opcional).
                 </small>
             </div>
         </div>
@@ -79,7 +107,7 @@
                 <strong class="field-title">Cédula</strong>
             </div>
             <div class="col-sm-10 col-content">
-                {{ Form::text('cedula', $data->cedula, array('class' => 'form-control', 'required')) }}
+                {{ Form::text('cedula', $data->cedula, array('class' => 'form-control', 'required', 'id' => 'cedula')) }}
                 <small class="form-text text-muted">
                     <i class="fa fa-question-circle" aria-hidden="true"></i> Sin puntos ni guiones
                 </small>
@@ -93,9 +121,9 @@
                 <strong class="field-title">Email</strong>
             </div>
             <div class="col-sm-10 col-content">
-                {{ Form::email('email', $data->email, array('class' => 'form-control', 'required')) }}
+                {{ Form::email('email', $data->email, array('class' => 'form-control', 'required', 'id' => 'email')) }}
                 <small class="form-text text-muted">
-                    <i class="fa fa-question-circle" aria-hidden="true"></i>
+                    <i class="fa fa-question-circle" aria-hidden="true"></i> Se genera automáticamente con la cédula, puede cambiarlo si desea
                 </small>
             </div>
         </div>
@@ -154,10 +182,9 @@
                     <option value="">Seleccione una ruta</option>
                     @foreach($rutas as $ruta)
                     <option value="{{ $ruta->id }}"
-                        data-charge="{{ $ruta->charge_per_day }}"
                         data-ruta="{{ $ruta->key_app }}"
                         {{ (isset($data->ruta_id) && $data->ruta_id == $ruta->id) ? 'selected' : '' }}>
-                        {{ $ruta->key_app }} - ₡{{ $ruta->charge_per_day }} - {{ $ruta->start_time ?? '' }} a {{ $ruta->out_time ?? '' }}
+                        {{ $ruta->key_app }} - {{ $ruta->start_time ?? '' }} a {{ $ruta->out_time ?? '' }}
                     </option>
                     @endforeach
                 </select>
@@ -171,12 +198,21 @@
 
         <div class="form-group row">
             <div class="col-sm-2 col-form-label">
-                <strong class="field-title">¿Cuanto Restar por Asistencia?</strong>
+                <strong class="field-title">Tarifa</strong>
             </div>
             <div class="col-sm-10 col-content">
-                {{ Form::text('cuantoRestar', $data->cuantoRestar, array('class' => 'form-control', 'required', 'id' => 'cuantoRestar')) }}
+                <select class="form-control select2" id="tarifa_id" name="tarifa_id" required data-placeholder="Seleccione una tarifa...">
+                    <option value="">Seleccione una tarifa</option>
+                    @foreach($tarifas as $tarifa)
+                    <option value="{{ $tarifa->id }}"
+                        data-monto="{{ $tarifa->monto }}"
+                        {{ (isset($data->tarifa_id) && $data->tarifa_id == $tarifa->id) ? 'selected' : '' }}>
+                        {{ $tarifa->nombre }} - ₡{{ number_format($tarifa->monto, 0, ',', '.') }}
+                    </option>
+                    @endforeach
+                </select>
                 <small class="form-text text-muted">
-                    <i class="fa fa-info-circle text-warning" aria-hidden="true"></i> <strong>Se cobra por asistencia:</strong> Este valor se aplica solo cuando el estudiante <strong>NO tiene beca</strong>. Se establece automáticamente según la ruta seleccionada.
+                    <i class="fa fa-info-circle text-info" aria-hidden="true"></i> <strong>Tarifa por asistencia:</strong> Este monto se cobrará cada vez que el estudiante marque asistencia.
                 </small>
             </div>
         </div>
@@ -193,6 +229,39 @@
                 </small>
             </div>
         </div>
+
+        @if($data->page_type == 'edit')
+        <br>
+        <div class="form-group row">
+            <div class="col-sm-2 col-form-label">
+                <strong class="field-title">Contrato</strong>
+            </div>
+            <div class="col-sm-10 col-content">
+                @if($data->contrato_subido && $data->contrato_url)
+                    <div class="alert alert-success">
+                        <i class="fa fa-check-circle"></i> <strong>Contrato subido</strong>
+                        <br>
+                        <small>
+                            Fecha de subida: {{ $data->contrato_fecha_subida ? $data->contrato_fecha_subida->format('d/m/Y H:i') : 'No registrada' }}
+                        </small>
+                        <br><br>
+                        <a href="{{ route('histories.download-contract', $data->id) }}" class="btn btn-sm btn-primary" target="_blank">
+                            <i class="fa fa-download"></i> Descargar Contrato
+                        </a>
+                        <a href="{{ asset($data->contrato_url) }}" class="btn btn-sm btn-info" target="_blank">
+                            <i class="fa fa-eye"></i> Ver Contrato
+                        </a>
+                    </div>
+                @else
+                    <div class="alert alert-warning">
+                        <i class="fa fa-exclamation-triangle"></i> <strong>Sin contrato</strong>
+                        <br>
+                        <small>El estudiante o su padre/madre aún no ha subido el contrato firmado.</small>
+                    </div>
+                @endif
+            </div>
+        </div>
+        @endif
 
     </div>
 
@@ -259,7 +328,6 @@
         const descripcionDiv = document.getElementById('beca-descripcion');
         const creditosDiv = document.getElementById('beca-creditos');
         const tipoBecaHidden = document.getElementById('tipoBeca_hidden');
-        const cuantoRestarField = document.querySelector('input[name="cuantoRestar"]');
 
         if (selectedOption.value) {
             const nombre = selectedOption.dataset.nombre;
@@ -282,58 +350,10 @@
             } else {
                 creditosDiv.innerHTML = '<strong>Monto Créditos:</strong> 0';
             }
-
-            // Mostrar mensaje informativo sobre el cobro por asistencia
-            updateCuantoRestarMessage(true);
         } else {
             tipoBecaHidden.value = '';
             descripcionDiv.innerHTML = '';
             creditosDiv.innerHTML = '';
-            
-            // Mostrar mensaje informativo sobre el cobro por asistencia
-            updateCuantoRestarMessage(false);
-        }
-    }
-
-    function updateCuantoRestarMessage(hasBeca) {
-        const cuantoRestarHelp = document.querySelector('input[name="cuantoRestar"]').parentNode.querySelector('.form-text');
-        
-        if (hasBeca) {
-            // Si tiene beca, mostrar que NO se cobrará por asistencia
-            cuantoRestarHelp.innerHTML = '<i class="fa fa-info-circle text-success" aria-hidden="true"></i> <strong>Con beca:</strong> Este estudiante <strong>NO pagará</strong> por asistencia. El valor se mantiene para referencia.';
-        } else {
-            // Si no tiene beca, mostrar el mensaje original
-            cuantoRestarHelp.innerHTML = '<i class="fa fa-info-circle text-warning" aria-hidden="true"></i> <strong>Se cobra por asistencia:</strong> Este valor se aplica solo cuando el estudiante <strong>NO tiene beca</strong>. Se establece automáticamente según la ruta seleccionada.';
-        }
-    }
-
-    function updateRutaInfo() {
-        const select = document.getElementById('ruta_id');
-        const cuantoRestarField = document.querySelector('input[name="cuantoRestar"]');
-        
-        // Obtener el valor seleccionado usando Select2 API
-        const selectedValue = $('#ruta_id').val();
-        
-        if (selectedValue) {
-            // Buscar la opción seleccionada para obtener el data-charge
-            const selectedOption = select.querySelector('option[value="' + selectedValue + '"]');
-            
-            if (selectedOption) {
-                const charge = selectedOption.dataset.charge;
-                
-                // Establecer el valor del campo cuantoRestar y hacerlo readonly
-                cuantoRestarField.value = charge || 0;
-                cuantoRestarField.readOnly = true;
-                cuantoRestarField.style.backgroundColor = '#e9ecef';
-                cuantoRestarField.style.cursor = 'not-allowed';
-                cuantoRestarField.title = 'Este valor se establece automáticamente según la ruta seleccionada';
-            }
-        } else {
-            // Si no hay ruta seleccionada, habilitar el campo para edición
-            cuantoRestarField.readOnly = false;
-            cuantoRestarField.style.backgroundColor = '';
-            cuantoRestarField.style.cursor = '';
-            cuantoRestarField.title = '';
         }
     }
 
@@ -341,7 +361,36 @@
     document.addEventListener('DOMContentLoaded', function() {
         updateColegioInfo();
         updateBecaInfo();
-        
+
+        // Auto-generar email basado en cédula
+        var cedulaInput = document.getElementById('cedula');
+        var emailInput = document.getElementById('email');
+        var emailModifiedManually = false;
+        var isNewRecord = {{ $data->id ? 'false' : 'true' }};
+
+        // Detectar si el usuario modifica manualmente el email
+        emailInput.addEventListener('input', function() {
+            var cedula = cedulaInput.value.trim();
+            var expectedEmail = cedula + '@beebus.com';
+            // Si el email es diferente al generado automático, marcar como modificado
+            if (emailInput.value !== expectedEmail) {
+                emailModifiedManually = true;
+            }
+        });
+
+        // Al cambiar la cédula, actualizar el email si no fue modificado manualmente
+        cedulaInput.addEventListener('input', function() {
+            var cedula = this.value.trim();
+            if (cedula && !emailModifiedManually) {
+                emailInput.value = cedula + '@beebus.com';
+            }
+        });
+
+        // Si es nuevo registro y no hay email, generar uno basado en cédula
+        if (isNewRecord && !emailInput.value && cedulaInput.value) {
+            emailInput.value = cedulaInput.value.trim() + '@beebus.com';
+        }
+
         // Inicializar Select2 para el dropdown de rutas
         $('#ruta_id').select2({
             placeholder: 'Buscar ruta...',
@@ -356,14 +405,21 @@
                 }
             }
         });
-        
-        // Agregar event listener para cambios en la ruta (Select2)
-        $('#ruta_id').on('change', function() {
-            updateRutaInfo();
+
+        // Inicializar Select2 para el dropdown de tarifas
+        $('#tarifa_id').select2({
+            placeholder: 'Seleccione una tarifa...',
+            allowClear: false,
+            width: '100%',
+            language: {
+                noResults: function() {
+                    return "No se encontraron tarifas";
+                },
+                searching: function() {
+                    return "Buscando...";
+                }
+            }
         });
-        
-        // Ejecutar updateRutaInfo al cargar si hay una ruta preseleccionada
-        updateRutaInfo();
     });
 </script>
 

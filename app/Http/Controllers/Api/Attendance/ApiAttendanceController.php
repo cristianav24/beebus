@@ -8,6 +8,7 @@ use App\Models\Setting;
 use App\Models\History;
 use App\Http\Controllers\EmailController;
 use App\Models\Beca;
+use App\Models\Tarifa;
 use App\Models\CreditTransaction;
 use Illuminate\Http\Request;
 use Response;
@@ -112,17 +113,26 @@ class ApiAttendanceController extends Controller
                     $ruta_id = $getUserMarcaInfo->ruta_id;
                     $beca_id = $getUserMarcaInfo->beca_id;
                     $colegio_id = $getUserMarcaInfo->colegio_id;
+                    $tarifa_id = $getUserMarcaInfo->tarifa_id;
 
                     // CONTROLES //
-                    // Validar si el estudiante tiene beca y usar el monto correspondiente
-                    if ($beca_id) {
-                        $monto_creditos = Beca::where('id', $beca_id)->value('monto_creditos');
-                        // Si tiene beca, usar monto_creditos de la beca
-                        $cuantoVoyARestar = $monto_creditos;
-                    } else {
-                        // Si no tiene beca, usar charge_per_day de Settings
-                        $cuantoVoyARestar = $getSettingsSegunKey->charge_per_day ?? 400;
+                    // Validar si el estudiante tiene tarifa asignada
+                    if (!$tarifa_id) {
+                        $data = [
+                            'message' => 'Error! Estudiante sin tarifa asignada. Contacte al administrador.',
+                        ];
+                        return response()->json($data, 200);
                     }
+
+                    // Obtener el monto de la tarifa asignada al estudiante
+                    $tarifa = Tarifa::find($tarifa_id);
+                    if (!$tarifa || $tarifa->estado !== 'activa') {
+                        $data = [
+                            'message' => 'Error! Tarifa no válida o inactiva. Contacte al administrador.',
+                        ];
+                        return response()->json($data, 200);
+                    }
+                    $cuantoVoyARestar = $tarifa->monto;
                     $newsCreditos = $getUserMarcaInfo->creditos - $cuantoVoyARestar;
                     $chancesParaMarcar = $getUserMarcaInfo->chancesParaMarcar;
 
@@ -167,6 +177,7 @@ class ApiAttendanceController extends Controller
                                     $save->rutaBus = $key;
                                     $save->ruta_id = $ruta_id; //Analizar si va el id de la ruta del estudiante
                                     $save->beca_id = $beca_id;
+                                    $save->tarifa_id = $tarifa_id;
                                     $save->colegio_id = $colegio_id;
                                     $save->status = 1;
 
@@ -222,13 +233,16 @@ class ApiAttendanceController extends Controller
                                     $save->date = $date;
                                     $save->in_location = $location;
                                     $save->in_time = $in_time;
-                                    $save->cuantoRestar = 'Se utilizo una chance (no quedan creditos), quedan: ' . $chancesActualesMail . ' chances.';
+                                    $save->cuantoRestar = $cuantoVoyARestar;
                                     $save->colegio = $colegioDeLaPersona;
                                     $save->tipoBeca = $tipoBecaDeLaPersona;
                                     $save->late_time = $lateTime;
                                     $save->rutaBus = $key;
-                                    $save->ruta_id = $ruta_id; //Analizar si va el id de la ruta del estudiante
+                                    $save->ruta_id = $ruta_id;
                                     $save->beca_id = $beca_id;
+                                    $save->tarifa_id = $tarifa_id;
+                                    $save->uso_chance = 1;
+                                    $save->chances_restantes = $chancesActualesMail;
                                     $save->colegio_id = $colegio_id;
                                     $save->status = 1;
 

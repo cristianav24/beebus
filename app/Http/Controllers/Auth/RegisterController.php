@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Providers\RouteServiceProvider;
 use App\Models\User;
+use App\Models\History;
+use App\Models\ParentProfile;
 use Illuminate\Foundation\Auth\RegistersUsers;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
@@ -50,8 +52,11 @@ class RegisterController extends Controller
     protected function validator(array $data)
     {
         return Validator::make($data, [
-            'name' => ['required', 'string', 'max:255'],
-			'role' => ['required'],
+            'first_name' => ['required', 'string', 'max:100'],
+            'last_name' => ['required', 'string', 'max:100'],
+            'second_last_name' => ['nullable', 'string', 'max:100'],
+            'cedula' => ['required', 'string', 'max:50'],
+            'role' => ['required'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
         ]);
@@ -65,16 +70,48 @@ class RegisterController extends Controller
      */
     protected function create(array $data)
     {
+        // Construir el nombre completo
+        $fullName = trim($data['first_name'] . ' ' . $data['last_name'] . ' ' . ($data['second_last_name'] ?? ''));
 
         $createNew = User::create([
-            'name' => $data['name'],
+            'name' => $fullName,
+            'first_name' => $data['first_name'],
+            'last_name' => $data['last_name'],
+            'second_last_name' => $data['second_last_name'] ?? null,
+            'cedula' => $data['cedula'],
             'email' => $data['email'],
             'password' => Hash::make($data['password']),
             'role' => $data['role'],
             'image' => 'default-user.png'
         ]);
 
-        $createNew->roles()->attach($data['role']); // Attach to 4 -> guest role
+        $createNew->roles()->attach($data['role']);
+
+        // Si es estudiante (role=3), crear History con status=2 (pendiente)
+        if ($data['role'] == 3) {
+            History::create([
+                'user_id' => $createNew->id,
+                'name' => $fullName,
+                'first_name' => $data['first_name'],
+                'last_name' => $data['last_name'],
+                'second_last_name' => $data['second_last_name'] ?? null,
+                'cedula' => $data['cedula'],
+                'email' => $data['email'],
+                'status' => 2, // Pendiente
+                'creditos' => 0,
+                'cuantoRestar' => 0,
+                'chancesParaMarcar' => 0,
+            ]);
+        }
+
+        // Si es padre (role=4), crear ParentProfile con cedula
+        if ($data['role'] == 4) {
+            ParentProfile::create([
+                'user_id' => $createNew->id,
+                'cedula' => $data['cedula'],
+            ]);
+        }
+
         return $createNew;
     }
 }

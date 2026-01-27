@@ -7,22 +7,49 @@ use App\Models\Base\History as BaseHistory;
 class History extends BaseHistory
 {
 	protected $fillable = [
+		'user_id',
 		'name',
+		'first_name',
+		'last_name',
+		'second_last_name',
 		'tipoBeca',
 		'colegio',
 		'colegio_id',
 		'beca_id',
 		'ruta_id',
+		'tarifa_id',
 		'seccion',
 		'email',
 		'cedula',
 		'cuantoRestar',
 		'creditos',
 		'chancesParaMarcar',
-		'status'
+		'status',
+		'contrato_subido',
+		'contrato_url',
+		'contrato_fecha_subida',
+		'contrato_subido_por',
 	];
 
+	protected $casts = [
+		'contrato_fecha_subida' => 'datetime',
+		'contrato_subido' => 'boolean',
+	];
+
+	/**
+	 * Get the full name attribute
+	 */
+	public function getFullNameAttribute()
+	{
+		return trim($this->first_name . ' ' . $this->last_name . ' ' . $this->second_last_name) ?: $this->name;
+	}
+
 	// Relaciones
+	public function user()
+	{
+		return $this->belongsTo(User::class, 'user_id');
+	}
+
 	public function colegio()
 	{
 		return $this->belongsTo(Colegio::class, 'colegio_id');
@@ -36,6 +63,11 @@ class History extends BaseHistory
 	public function ruta()
 	{
 		return $this->belongsTo(Setting::class, 'ruta_id');
+	}
+
+	public function tarifa()
+	{
+		return $this->belongsTo(Tarifa::class, 'tarifa_id');
 	}
 
 	public function creditTransactions()

@@ -15,6 +15,9 @@ class Attendance extends BaseAttendance
 		'beca_id',
 		'colegio_id',
 		'ruta_id',
+		'tarifa_id',
+		'uso_chance',
+		'chances_restantes',
 		'in_time',
 		'cuantoRestar',
 		'out_time',
@@ -25,19 +28,6 @@ class Attendance extends BaseAttendance
 		'in_location',
 		'out_location'
 	];
-	
-	/*protected $fillable = [
-		'worker_id',
-		'date',
-		'in_time',
-		'out_time',
-		'work_hour',
-		'over_time',
-		'late_time',
-		'early_out_time',
-		'in_location',
-		'out_location'
-	];*/
 
     protected $dates = [
         'date'
@@ -45,6 +35,7 @@ class Attendance extends BaseAttendance
 
     protected $casts = [
         'date'  => 'date:Y-m-d',
+        'uso_chance' => 'boolean',
     ];
 
     // Relaciones
@@ -61,5 +52,10 @@ class Attendance extends BaseAttendance
     public function ruta()
     {
         return $this->belongsTo(Setting::class, 'ruta_id');
+    }
+
+    public function tarifa()
+    {
+        return $this->belongsTo(Tarifa::class, 'tarifa_id');
     }
 }
