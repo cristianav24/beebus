@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use App\Models\Setting;
+use App\Models\Colegio;
 use Config;
 
 class SettingsController extends Controller {
@@ -17,7 +18,8 @@ class SettingsController extends Controller {
             'start_time' => 'required',
             'out_time' => 'required',
             'timezone' => 'required',
-            'status' => 'required|in:activo,inactivo'
+            'status' => 'required|in:activo,inactivo',
+            'colegio_id' => 'nullable|exists:colegios,id'
         ]);
     }
 
@@ -53,10 +55,13 @@ class SettingsController extends Controller {
             $data->button_text = '';
         }
 
+        $colegios = Colegio::orderBy('nombre')->get();
+
         return view('backend.settings.form', [
             'data' => $data,
             'timezone' => $this->timezone(),
             'key' => $key,
+            'colegios' => $colegios,
         ]);
     }
 

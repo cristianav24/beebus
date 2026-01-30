@@ -107,6 +107,14 @@ Route::group(['middleware' => ['role:administrator|admin']], function () {
     Route::GET('/histories/colegios/{colegioId}/rutas', 'Backend\History\HistoryController@getRutasByColegio')->name('histories.rutasByColegio');
     Route::GET('/histories/rutas/{rutaId}/paraderos', 'Backend\History\HistoryController@getParaderosByRuta')->name('histories.paraderosByRuta');
 
+    // Zonas Routes
+    Route::GET('/zonas', 'Backend\Zona\ZonaController@index')->name('zonas.index');
+    Route::GET('/zonas/add', 'Backend\Zona\ZonaController@add')->name('zonas.add');
+    Route::POST('/zonas/create', 'Backend\Zona\ZonaController@create')->name('zonas.create');
+    Route::GET('/zonas/edit/{id}', 'Backend\Zona\ZonaController@edit')->name('zonas.edit');
+    Route::POST('/zonas/update', 'Backend\Zona\ZonaController@update')->name('zonas.update');
+    Route::GET('/zonas/delete/{id}', 'Backend\Zona\ZonaController@delete')->name('zonas.delete');
+
     // Colegios Routes
     Route::GET('/colegios', 'Backend\Colegio\ColegioController@index')->name('colegios.index');
     Route::GET('/colegios/add', 'Backend\Colegio\ColegioController@add')->name('colegios.add');
@@ -132,6 +140,17 @@ Route::group(['middleware' => ['role:administrator|admin']], function () {
     Route::POST('/tarifas/update', 'Backend\Tarifa\TarifaController@update')->name('tarifas.update');
     Route::GET('/tarifas/{id}/students', 'Backend\Tarifa\TarifaController@viewStudents')->name('tarifas.students');
     Route::GET('/tarifas/delete/{id}', 'Backend\Tarifa\TarifaController@delete')->name('tarifas.delete');
+
+    // Paraderos Routes
+    Route::GET('/paraderos', 'Backend\Paradero\ParaderoController@index')->name('paraderos.index');
+    Route::GET('/paraderos/add', 'Backend\Paradero\ParaderoController@add')->name('paraderos.add');
+    Route::POST('/paraderos/create', 'Backend\Paradero\ParaderoController@create')->name('paraderos.create');
+    Route::GET('/paraderos/edit/{id}', 'Backend\Paradero\ParaderoController@edit')->name('paraderos.edit');
+    Route::POST('/paraderos/update', 'Backend\Paradero\ParaderoController@update')->name('paraderos.update');
+    Route::GET('/paraderos/delete/{id}', 'Backend\Paradero\ParaderoController@delete')->name('paraderos.delete');
+    Route::GET('/paraderos/ruta/{rutaId}', 'Backend\Paradero\ParaderoController@porRuta')->name('paraderos.por-ruta');
+    Route::POST('/paraderos/reordenar', 'Backend\Paradero\ParaderoController@reordenar')->name('paraderos.reordenar');
+    Route::POST('/paraderos/duplicar', 'Backend\Paradero\ParaderoController@duplicar')->name('paraderos.duplicar');
 });
 
 Route::post('reinputkey/index/{code}', 'Utils\Activity\ReinputKeyController@index');

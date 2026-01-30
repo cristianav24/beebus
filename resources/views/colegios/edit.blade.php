@@ -65,6 +65,22 @@
                 <div class="row">
                     <div class="col-md-6">
                         <div class="form-group">
+                            <label for="zona_id">Zona</label>
+                            <select class="form-control @error('zona_id') is-invalid @enderror" id="zona_id" name="zona_id">
+                                <option value="">Sin zona asignada</option>
+                                @foreach($zonas as $zona)
+                                    <option value="{{ $zona->id }}" {{ old('zona_id', $colegio->zona_id) == $zona->id ? 'selected' : '' }}>
+                                        {{ $zona->nombre }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            @error('zona_id')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
                             <label for="estado">Estado <span class="text-danger">*</span></label>
                             <select class="form-control @error('estado') is-invalid @enderror" id="estado" name="estado" required>
                                 <option value="">Seleccione un estado</option>

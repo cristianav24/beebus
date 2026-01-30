@@ -118,6 +118,23 @@
                             </div>
                         </div>
 
+                        <div class="form-group row">
+                            <div class="col-sm-2 col-form-label">
+                                <strong class="field-title">Colegio</strong>
+                            </div>
+                            <div class="col-sm-10 col-content">
+                                <select class="form-control" id="colegio_id" name="colegio_id">
+                                    <option value="">Sin colegio asignado</option>
+                                    @foreach($colegios as $colegio)
+                                        <option value="{{ $colegio->id }}" {{ (isset($rowDataSettings['colegio_id']) && $rowDataSettings['colegio_id'] == $colegio->id) ? 'selected' : '' }}>
+                                            {{ $colegio->nombre }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                <p class="form-text text-muted">Colegio al que pertenece esta ruta</p>
+                            </div>
+                        </div>
+
                     </div>
                     <div class="col-md-5">
                         <?php $qrParaGenerar = "{'url':'" . url('/') . "', 'key':'" . $rowDataSettings['key_app'] . "'}"; ?>
@@ -296,6 +313,15 @@
                                 <select class="form-control" id="status" name="status">
                                     <option value="activo" selected>Activo</option>
                                     <option value="inactivo">Inactivo</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="colegio_id">Colegio</label>
+                                <select class="form-control" id="colegio_id" name="colegio_id">
+                                    <option value="">Sin colegio asignado</option>
+                                    @foreach($colegios as $colegio)
+                                        <option value="{{ $colegio->id }}">{{ $colegio->nombre }}</option>
+                                    @endforeach
                                 </select>
                             </div>
                             <button type="submit" class="btn btn-primary">Crear Ruta</button>

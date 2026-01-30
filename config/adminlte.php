@@ -373,6 +373,23 @@ return [
             'role' => 'administrator|admin',
         ],
         [
+            'text' => 'Zonas',
+            'icon' => 'fa fa-map',
+            'submenu' => [
+                [
+                    'text' => 'Lista',
+                    'url'  => 'zonas',
+                    'icon' => 'fa fa-list-ul',
+                ],
+                [
+                    'text' => 'Agregar Zona',
+                    'url'  => 'zonas/add',
+                    'icon' => 'fa fa-plus',
+                ],
+            ],
+            'role' => 'administrator|admin',
+        ],
+        [
             'text' => 'Colegios',
             'icon' => 'fa fa-school',
             'submenu' => [
@@ -418,6 +435,23 @@ return [
                 [
                     'text' => 'Agregar Tarifa',
                     'url'  => 'tarifas/add',
+                    'icon' => 'fa fa-plus',
+                ],
+            ],
+            'role' => 'administrator|admin',
+        ],
+        [
+            'text' => 'Paraderos',
+            'icon' => 'fa fa-map-marker-alt',
+            'submenu' => [
+                [
+                    'text' => 'Lista',
+                    'url'  => 'paraderos',
+                    'icon' => 'fa fa-list-ul',
+                ],
+                [
+                    'text' => 'Agregar Paradero',
+                    'url'  => 'paraderos/add',
                     'icon' => 'fa fa-plus',
                 ],
             ],

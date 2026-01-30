@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Backend\Colegio;
 
 use App\Http\Controllers\Controller;
 use App\Models\Colegio;
+use App\Models\Zona;
 use App\Models\History;
 use Illuminate\Http\Request;
 use Crypt;
@@ -12,13 +13,14 @@ class ColegioController extends Controller
 {
     public function index()
     {
-        $colegios = Colegio::orderBy('nombre')->paginate(15);
+        $colegios = Colegio::with('zona')->orderBy('nombre')->paginate(15);
         return view('colegios.index', compact('colegios'));
     }
 
     public function add()
     {
-        return view('colegios.create');
+        $zonas = Zona::activas()->orderBy('nombre')->get();
+        return view('colegios.create', compact('zonas'));
     }
 
     public function create(Request $request)
@@ -29,6 +31,7 @@ class ColegioController extends Controller
             'telefono' => 'nullable|string|max:20',
             'email' => 'nullable|email|max:100',
             'codigo_institucional' => 'nullable|string|max:50|unique:colegios',
+            'zona_id' => 'nullable|exists:zonas,id',
             'estado' => 'required|in:activo,inactivo'
         ]);
 
@@ -41,7 +44,8 @@ class ColegioController extends Controller
     public function edit($id)
     {
         $colegio = Colegio::findOrFail($id);
-        return view('colegios.edit', compact('colegio'));
+        $zonas = Zona::activas()->orderBy('nombre')->get();
+        return view('colegios.edit', compact('colegio', 'zonas'));
     }
 
     public function update(Request $request)
@@ -54,6 +58,7 @@ class ColegioController extends Controller
             'telefono' => 'nullable|string|max:20',
             'email' => 'nullable|email|max:100',
             'codigo_institucional' => 'nullable|string|max:50|unique:colegios,codigo_institucional,' . $colegio->id,
+            'zona_id' => 'nullable|exists:zonas,id',
             'estado' => 'required|in:activo,inactivo'
         ]);
 

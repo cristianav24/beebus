@@ -19,7 +19,8 @@ class SettingController extends Controller
             'out_time' => 'required',
             'key_app' => 'required|unique:settings,key_app',
             'timezone' => 'required',
-            'status' => 'required|in:activo,inactivo'
+            'status' => 'required|in:activo,inactivo',
+            'colegio_id' => 'nullable|exists:colegios,id'
         ]);
 
         $setting = Setting::create($request->all());
