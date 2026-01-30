@@ -15,6 +15,7 @@ class Colegio extends Model
         'telefono',
         'email',
         'codigo_institucional',
+        'zona_id',
         'estado'
     ];
 
@@ -23,9 +24,19 @@ class Colegio extends Model
         'updated_at' => 'datetime',
     ];
 
+    public function zona()
+    {
+        return $this->belongsTo(Zona::class, 'zona_id');
+    }
+
     public function histories()
     {
         return $this->hasMany(History::class, 'colegio_id');
+    }
+
+    public function rutas()
+    {
+        return $this->hasMany(Setting::class, 'colegio_id');
     }
 
     public function scopeActivos($query)

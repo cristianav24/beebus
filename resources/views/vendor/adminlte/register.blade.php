@@ -155,6 +155,63 @@
                     @endif
                 </div>
 
+                {{-- Campos extra para estudiantes --}}
+                <div id="student-fields" style="{{ old('role', 3) == 3 ? '' : 'display:none;' }}">
+                    <p class="login-box-msg mb-2">Datos del Estudiante</p>
+
+                    {{-- ZONA --}}
+                    <div class="input-group mb-3">
+                        <select name="zona_id" id="zona_id" class="form-control">
+                            <option value="">Seleccione su Zona</option>
+                            @foreach($zonas as $zona)
+                                <option value="{{ $zona->id }}">{{ $zona->nombre }}</option>
+                            @endforeach
+                        </select>
+                        <div class="input-group-append">
+                            <div class="input-group-text">
+                                <span class="fas fa-map-marker-alt"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- COLEGIO --}}
+                    <div class="input-group mb-3">
+                        <select name="colegio_id" id="colegio_id" class="form-control" disabled>
+                            <option value="">-- Primero seleccione una zona --</option>
+                        </select>
+                        <div class="input-group-append">
+                            <div class="input-group-text">
+                                <span class="fas fa-school"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- RUTA --}}
+                    <div class="input-group mb-3">
+                        <select name="ruta_id" id="ruta_id" class="form-control" disabled>
+                            <option value="">-- Primero seleccione un colegio --</option>
+                        </select>
+                        <div class="input-group-append">
+                            <div class="input-group-text">
+                                <span class="fas fa-bus"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- PARADERO --}}
+                    <div class="input-group mb-3">
+                        <select name="paradero_id" id="paradero_id" class="form-control" disabled>
+                            <option value="">-- Primero seleccione una ruta --</option>
+                        </select>
+                        <div class="input-group-append">
+                            <div class="input-group-text">
+                                <span class="fas fa-map-pin"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="paradero-monto-info" style="text-align:center; margin-bottom: 10px; font-weight: bold;"></div>
+                </div>
+
                 <button type="submit" class="btn btn-primary btn-block btn-flat">
                     {{ __('adminlte::adminlte.register') }}
                 </button>
@@ -171,6 +228,170 @@
 
 @section('adminlte_js')
     <script src="{{ asset('vendor/adminlte/dist/js/adminlte.min.js') }}"></script>
+    <script>
+        var apiBase = "{{ url('/api') }}";
+
+        // Role toggle
+        document.getElementById('role').addEventListener('change', function() {
+            document.getElementById('student-fields').style.display = this.value == '3' ? '' : 'none';
+        });
+
+        // ========== CASCADA ==========
+
+        document.getElementById('zona_id').addEventListener('change', function() {
+            var zonaId = this.value;
+            var colegioSel = document.getElementById('colegio_id');
+            var rutaSel = document.getElementById('ruta_id');
+            var paraderoSel = document.getElementById('paradero_id');
+            var montoInfo = document.getElementById('paradero-monto-info');
+
+            // Reset dependientes
+            colegioSel.innerHTML = '<option value="">Cargando...</option>';
+            colegioSel.disabled = true;
+            rutaSel.innerHTML = '<option value="">-- Primero seleccione un colegio --</option>';
+            rutaSel.disabled = true;
+            paraderoSel.innerHTML = '<option value="">-- Primero seleccione una ruta --</option>';
+            paraderoSel.disabled = true;
+            montoInfo.innerHTML = '';
+
+            if (!zonaId) {
+                colegioSel.innerHTML = '<option value="">-- Primero seleccione una zona --</option>';
+                return;
+            }
+
+            fetch(apiBase + '/zonas/' + zonaId + '/colegios')
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    colegioSel.innerHTML = '<option value="">Seleccione su Colegio</option>';
+                    data.forEach(function(c) {
+                        var opt = document.createElement('option');
+                        opt.value = c.id;
+                        opt.textContent = c.nombre;
+                        colegioSel.appendChild(opt);
+                    });
+                    colegioSel.disabled = false;
+                });
+        });
+
+        document.getElementById('colegio_id').addEventListener('change', function() {
+            var colegioId = this.value;
+            var rutaSel = document.getElementById('ruta_id');
+            var paraderoSel = document.getElementById('paradero_id');
+            var montoInfo = document.getElementById('paradero-monto-info');
+
+            rutaSel.innerHTML = '<option value="">Cargando...</option>';
+            rutaSel.disabled = true;
+            paraderoSel.innerHTML = '<option value="">-- Primero seleccione una ruta --</option>';
+            paraderoSel.disabled = true;
+            montoInfo.innerHTML = '';
+
+            if (!colegioId) {
+                rutaSel.innerHTML = '<option value="">-- Primero seleccione un colegio --</option>';
+                return;
+            }
+
+            fetch(apiBase + '/colegios/' + colegioId + '/rutas')
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    rutaSel.innerHTML = '<option value="">Seleccione su Ruta</option>';
+                    data.forEach(function(ruta) {
+                        var opt = document.createElement('option');
+                        opt.value = ruta.id;
+                        var label = ruta.key_app;
+                        if (ruta.start_time) label += ' - ' + ruta.start_time;
+                        if (ruta.out_time) label += ' a ' + ruta.out_time;
+                        opt.textContent = label;
+                        rutaSel.appendChild(opt);
+                    });
+                    rutaSel.disabled = false;
+                });
+        });
+
+        document.getElementById('ruta_id').addEventListener('change', function() {
+            var rutaId = this.value;
+            var paraderoSel = document.getElementById('paradero_id');
+            var montoInfo = document.getElementById('paradero-monto-info');
+
+            paraderoSel.innerHTML = '<option value="">Cargando...</option>';
+            paraderoSel.disabled = true;
+            montoInfo.innerHTML = '';
+
+            if (!rutaId) {
+                paraderoSel.innerHTML = '<option value="">-- Primero seleccione una ruta --</option>';
+                return;
+            }
+
+            fetch(apiBase + '/rutas/' + rutaId + '/paraderos')
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    if (data.length === 0) {
+                        paraderoSel.innerHTML = '<option value="">No hay paraderos para esta ruta</option>';
+                        return;
+                    }
+
+                    // Solo 1 paradero: auto-seleccionar
+                    if (data.length === 1) {
+                        var p = data[0];
+                        var label = p.nombre;
+                        if (p.hora) label += ' (' + p.hora + ')';
+                        if (p.es_beca_empresarial) {
+                            label += ' - BECA EMPRESARIAL';
+                        } else {
+                            label += ' - ₡' + Number(p.monto).toLocaleString('es-CR');
+                        }
+                        paraderoSel.innerHTML = '';
+                        var opt = document.createElement('option');
+                        opt.value = p.id;
+                        opt.textContent = label;
+                        opt.dataset.monto = p.monto;
+                        opt.dataset.esBeca = p.es_beca_empresarial;
+                        opt.selected = true;
+                        paraderoSel.appendChild(opt);
+                        paraderoSel.disabled = false;
+                        showMontoInfo(p);
+                        return;
+                    }
+
+                    // Varios paraderos: mostrar lista
+                    paraderoSel.innerHTML = '<option value="">Seleccione su Paradero</option>';
+                    data.forEach(function(p) {
+                        var opt = document.createElement('option');
+                        opt.value = p.id;
+                        var label = p.nombre;
+                        if (p.hora) label += ' (' + p.hora + ')';
+                        if (p.es_beca_empresarial) {
+                            label += ' - BECA EMPRESARIAL';
+                        } else {
+                            label += ' - ₡' + Number(p.monto).toLocaleString('es-CR');
+                        }
+                        opt.textContent = label;
+                        opt.dataset.monto = p.monto;
+                        opt.dataset.esBeca = p.es_beca_empresarial;
+                        paraderoSel.appendChild(opt);
+                    });
+                    paraderoSel.disabled = false;
+                });
+        });
+
+        document.getElementById('paradero_id').addEventListener('change', function() {
+            var sel = this.options[this.selectedIndex];
+            var montoInfo = document.getElementById('paradero-monto-info');
+            if (sel && sel.value) {
+                showMontoInfo({ monto: sel.dataset.monto, es_beca_empresarial: sel.dataset.esBeca });
+            } else {
+                montoInfo.innerHTML = '';
+            }
+        });
+
+        function showMontoInfo(p) {
+            var montoInfo = document.getElementById('paradero-monto-info');
+            if (p.es_beca_empresarial == '1' || p.es_beca_empresarial === true) {
+                montoInfo.innerHTML = '<span style="color:#17a2b8;">BECA EMPRESARIAL - Sin costo</span>';
+            } else {
+                montoInfo.innerHTML = '<span style="color:#28a745;">Monto: ₡' + Number(p.monto).toLocaleString('es-CR') + '</span>';
+            }
+        }
+    </script>
     @stack('js')
     @yield('js')
 @stop

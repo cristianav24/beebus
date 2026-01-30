@@ -292,6 +292,12 @@ return [
             'role' => 'guest',
         ],
         [
+            'text' => 'Mis Hijos',
+            'url'  => 'parent/my-children',
+            'icon' => 'fa fa-child',
+            'role' => 'guest',
+        ],
+        [
             'text' => 'Mi Perfil',
             'url'  => 'parent/profile/view',
             'icon' => 'fa fa-user',
@@ -335,7 +341,7 @@ return [
             'role' => 'administrator|admin',
         ],
         [
-            'text' => 'Accesos QR',
+            'text' => 'Alumnos',
             'icon' => 'fa fa-qrcode',
             'submenu' => [
                 [
@@ -349,10 +355,15 @@ return [
                     'icon' => 'fa fa-list-ul',
                 ],
                 [
+                    'text' => 'Lista Pendientes',
+                    'url'  => 'histories/pending',
+                    'icon' => 'fa fa-clock',
+                ],
+                /*[
                     'text' => 'Importar CSV',
                     'url'  => 'histories/import',
                     'icon' => 'fa fa-upload',
-                ],
+                ],*/
                 [
                     'text' => 'Añadir / Actualizar',
                     'url'  => 'histories/add',

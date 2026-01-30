@@ -13,6 +13,8 @@ use App\Models\Colegio;
 use App\Models\Beca;
 use App\Models\Setting;
 use App\Models\Tarifa;
+use App\Models\Zona;
+use App\Models\Paradero;
 use App\Models\CreditTransaction;
 use Auth;
 use Config;
@@ -79,11 +81,13 @@ class HistoryController extends Controller
                     return $data->full_name ?: $data->name;
                 })
                 ->addColumn('action', function (History $data) {
+                    $routeShow = route($this->getRoute() . ".show", $data->id);
                     $routeEdit = route($this->getRoute() . ".edit", $data->id);
                     $routeDelete = route($this->getRoute() . ".delete", $data->id);
                     $routeTransactions = route('transactions.index', ['search' => $data->name]);
 
                     $button = '<div class="btn-group">';
+                    $button .= '<a href="' . $routeShow . '" title="Ver detalle"><button class="btn btn-sm btn-secondary"><i class="fa fa-eye"></i></button></a> ';
                     $button .= '<a href="' . $routeTransactions . '" title="Transacciones"><button class="btn btn-sm btn-info"><i class="fa fa-credit-card"></i></button></a> ';
                     $button .= '<a href="' . $routeEdit . '" title="Editar"><button class="btn btn-sm btn-primary"><i class="fa fa-edit"></i></button></a> ';
                     if (Auth::user()->hasRole('administrator')) {
@@ -196,11 +200,13 @@ class HistoryController extends Controller
                     return $data->full_name ?: $data->name;
                 })
                 ->addColumn('action', function (History $data) {
+                    $routeShow = route($this->getRoute() . ".show", $data->id);
                     $routeEdit = route($this->getRoute() . ".edit", $data->id);
                     $routeDelete = route($this->getRoute() . ".delete", $data->id);
                     $routeTransactions = route('transactions.index', ['search' => $data->name]);
 
                     $button = '<div class="btn-group">';
+                    $button .= '<a href="' . $routeShow . '" title="Ver detalle"><button class="btn btn-sm btn-secondary"><i class="fa fa-eye"></i></button></a> ';
                     $button .= '<a href="' . $routeTransactions . '" title="Transacciones"><button class="btn btn-sm btn-info"><i class="fa fa-credit-card"></i></button></a> ';
                     $button .= '<a href="' . $routeEdit . '" title="Editar"><button class="btn btn-sm btn-primary"><i class="fa fa-edit"></i></button></a> ';
                     if (Auth::user()->hasRole('administrator')) {
@@ -270,6 +276,111 @@ class HistoryController extends Controller
         return view('backend.histories.history-inactives', compact('html'));
     }
 
+    public function pending(Datatables $datatables)
+    {
+        $columns = [
+            'id' => ['title' => 'No.', 'orderable' => false, 'searchable' => false, 'render' => function () {
+                return 'function(data,type,fullData,meta){return meta.settings._iDisplayStart+meta.row+1;}';
+            }],
+            'full_name' => ['title' => 'Nombre', 'name' => 'histories.name'],
+            'cedula' => ['title' => 'Cédula', 'name' => 'histories.cedula'],
+            'colegio_nombre' => ['title' => 'Colegio', 'name' => 'colegios.nombre'],
+            'ruta_nombre' => ['title' => 'Ruta', 'name' => 'settings.key_app'],
+            'creditos' => ['title' => 'Créditos', 'name' => 'histories.creditos'],
+            'contrato_status' => ['title' => 'Contrato', 'orderable' => false, 'searchable' => false],
+            'fecha_registro' => ['title' => 'Fecha Registro', 'name' => 'histories.created_at'],
+            'action' => ['orderable' => false, 'searchable' => false]
+        ];
+
+        if ($datatables->getRequest()->ajax()) {
+            $query = History::where('histories.status', 2)
+                ->leftJoin('colegios', 'histories.colegio_id', '=', 'colegios.id')
+                ->leftJoin('settings', 'histories.ruta_id', '=', 'settings.id')
+                ->select('histories.*', 'colegios.nombre as colegio_nombre', 'settings.key_app as ruta_nombre');
+
+            return $datatables->of($query)
+                ->addColumn('full_name', function (History $data) {
+                    return $data->full_name ?: $data->name;
+                })
+                ->addColumn('action', function (History $data) {
+                    $routeShow = route($this->getRoute() . ".show", $data->id);
+                    $routeEdit = route($this->getRoute() . ".edit", $data->id);
+
+                    $button = '<div class="btn-group">';
+                    $button .= '<a href="' . $routeShow . '" title="Ver detalle"><button class="btn btn-sm btn-secondary"><i class="fa fa-eye"></i></button></a> ';
+                    $button .= '<a href="' . $routeEdit . '" title="Editar / Completar"><button class="btn btn-sm btn-primary"><i class="fa fa-edit"></i></button></a>';
+                    $button .= '</div>';
+                    return $button;
+                })
+                ->addColumn('contrato_status', function (History $data) {
+                    if ($data->contrato_subido) {
+                        $downloadUrl = route('histories.download-contract', $data->id);
+                        return '<a href="' . $downloadUrl . '" class="btn btn-sm btn-success" title="Descargar contrato" target="_blank">
+                                    <i class="fa fa-file-pdf"></i> Ver
+                                </a>';
+                    }
+                    return '<span class="badge badge-warning"><i class="fa fa-times"></i> Pendiente</span>';
+                })
+                ->addColumn('fecha_registro', function (History $data) {
+                    return $data->created_at ? $data->created_at->format('d/m/Y H:i') : '-';
+                })
+                ->editColumn('colegio_nombre', function (History $data) {
+                    return $data->colegio_nombre ?? ($data->colegio ?? '-');
+                })
+                ->editColumn('ruta_nombre', function (History $data) {
+                    return $data->ruta_nombre ?? '-';
+                })
+                ->editColumn('creditos', function (History $data) {
+                    $class = $data->creditos >= 0 ? 'success' : 'danger';
+                    return '<span class="badge badge-' . $class . '">₡' . number_format($data->creditos, 0, ',', '.') . '</span>';
+                })
+                ->filterColumn('full_name', function($query, $keyword) {
+                    $query->where(function($q) use ($keyword) {
+                        $q->where('histories.name', 'like', "%{$keyword}%")
+                          ->orWhere('histories.first_name', 'like', "%{$keyword}%")
+                          ->orWhere('histories.last_name', 'like', "%{$keyword}%");
+                    });
+                })
+                ->rawColumns(['action', 'creditos', 'contrato_status'])
+                ->toJson();
+        }
+
+        $columnsArrExPr = [1, 2, 3, 4, 5, 6, 7];
+        $html = $datatables->getHtmlBuilder()
+            ->columns($columns)
+            ->parameters([
+                'order' => [[7, 'desc']],
+                'responsive' => true,
+                'autoWidth' => false,
+                'processing' => true,
+                'serverSide' => true,
+                'lengthMenu' => [
+                    [10, 25, 50, 100],
+                    ['10', '25', '50', '100']
+                ],
+                'dom' => 'Bfrtip',
+                'buttons' => $this->buttonDatatables($columnsArrExPr),
+                'language' => [
+                    'processing' => 'Cargando...',
+                    'search' => 'Buscar:',
+                    'lengthMenu' => 'Mostrar _MENU_ registros',
+                    'info' => 'Mostrando _START_ a _END_ de _TOTAL_ pendientes',
+                    'infoEmpty' => 'Mostrando 0 a 0 de 0 pendientes',
+                    'infoFiltered' => '(filtrado de _MAX_ totales)',
+                    'zeroRecords' => 'No se encontraron estudiantes pendientes',
+                    'emptyTable' => 'No hay estudiantes pendientes',
+                    'paginate' => [
+                        'first' => 'Primero',
+                        'previous' => 'Anterior',
+                        'next' => 'Siguiente',
+                        'last' => 'Último'
+                    ]
+                ]
+            ]);
+
+        return view('backend.histories.history-pending', compact('html'));
+    }
+
     /**
      * Fungtion show button for export or print.
      *
@@ -323,17 +434,16 @@ class HistoryController extends Controller
         $data->page_type = 'add';
         $data->button_text = 'Add';
 
-        $colegios = Colegio::where('estado', 'activo')->orderBy('nombre')->get();
+        $zonas = Zona::where('estado', 'activo')->orderBy('nombre')->get();
         $becas = Beca::where('estado', 'activa')->orderBy('nombre_beca')->get();
-        $rutas = Setting::where('status', 'activo')->orderBy('key_app')->get();
         $tarifas = Tarifa::where('estado', 'activa')->orderBy('monto')->get();
 
         return view('backend.histories.form', [
             'data' => $data,
-            'colegios' => $colegios,
+            'zonas' => $zonas,
             'becas' => $becas,
-            'rutas' => $rutas,
             'tarifas' => $tarifas,
+            'currentZonaId' => null,
         ]);
     }
 
@@ -372,6 +482,9 @@ class HistoryController extends Controller
         }
         if (!isset($new['tarifa_id']) || empty($new['tarifa_id'])) {
             $new['tarifa_id'] = null;
+        }
+        if (!isset($new['paradero_id']) || empty($new['paradero_id'])) {
+            $new['paradero_id'] = null;
         }
 
         $this->validator($new, 'create')->validate();
@@ -471,7 +584,8 @@ class HistoryController extends Controller
             'colegio_id' => 'nullable|integer|exists:colegios,id',
             'beca_id' => 'nullable|integer|exists:becas,id',
             'ruta_id' => 'nullable|integer|exists:settings,id',
-            'tarifa_id' => 'required|integer|exists:tarifas,id',
+            'tarifa_id' => 'nullable|integer|exists:tarifas,id',
+            'paradero_id' => 'nullable|integer|exists:paraderos,id',
             'email' => 'required|email|max:255',
             'cedula' => 'required|string|max:50',
             'creditos' => 'required|integer|min:0',
@@ -485,6 +599,33 @@ class HistoryController extends Controller
      * @param  int $id
      * @return \Illuminate\Http\Response
      */
+    public function show($id)
+    {
+        $student = History::with(['colegio', 'beca', 'ruta', 'tarifa'])->findOrFail($id);
+
+        // Usuario vinculado
+        $user = $student->user_id ? User::find($student->user_id) : null;
+
+        // Transacciones recientes
+        $transactions = CreditTransaction::where('history_id', $student->id)
+            ->orderBy('created_at', 'desc')
+            ->limit(20)
+            ->get();
+
+        // Estadisticas
+        $stats = [
+            'total_recargas' => CreditTransaction::where('history_id', $student->id)->where('type', 'recarga')->count(),
+            'total_consumos' => CreditTransaction::where('history_id', $student->id)->where('type', 'consumo')->count(),
+            'monto_recargas' => CreditTransaction::where('history_id', $student->id)->where('type', 'recarga')->sum('amount'),
+            'monto_consumos' => CreditTransaction::where('history_id', $student->id)->where('type', 'consumo')->sum('amount'),
+        ];
+
+        // QR data
+        $qrData = Crypt::encryptString($student->id);
+
+        return view('backend.histories.show', compact('student', 'user', 'transactions', 'stats', 'qrData'));
+    }
+
     public function edit($id)
     {
         $data = History::find($id);
@@ -493,17 +634,25 @@ class HistoryController extends Controller
         $data->page_type = 'edit';
         $data->button_text = 'Edit';
 
-        $colegios = Colegio::where('estado', 'activo')->orderBy('nombre')->get();
+        // Obtener zona_id desde el colegio del estudiante (para preseleccionar cascada)
+        $currentZonaId = null;
+        if ($data->colegio_id) {
+            $colegioObj = Colegio::find($data->colegio_id);
+            if ($colegioObj) {
+                $currentZonaId = $colegioObj->zona_id;
+            }
+        }
+
+        $zonas = Zona::where('estado', 'activo')->orderBy('nombre')->get();
         $becas = Beca::where('estado', 'activa')->orderBy('nombre_beca')->get();
-        $rutas = Setting::where('status', 'activo')->orderBy('key_app')->get();
         $tarifas = Tarifa::where('estado', 'activa')->orderBy('monto')->get();
 
         return view('backend.histories.form', [
             'data' => $data,
-            'colegios' => $colegios,
+            'zonas' => $zonas,
             'becas' => $becas,
-            'rutas' => $rutas,
             'tarifas' => $tarifas,
+            'currentZonaId' => $currentZonaId,
         ]);
     }
 
@@ -532,6 +681,9 @@ class HistoryController extends Controller
         }
         if (!isset($new['tarifa_id']) || empty($new['tarifa_id'])) {
             $new['tarifa_id'] = null;
+        }
+        if (!isset($new['paradero_id']) || empty($new['paradero_id'])) {
+            $new['paradero_id'] = null;
         }
 
         try {
@@ -811,6 +963,38 @@ class HistoryController extends Controller
         }
 
         return response()->json(['success' => false, 'message' => 'Item not found.']);
+    }
+
+    // ========== AJAX Cascade Endpoints ==========
+
+    public function getColegiosByZona($zonaId)
+    {
+        $colegios = Colegio::where('zona_id', $zonaId)
+            ->where('estado', 'activo')
+            ->orderBy('nombre')
+            ->get(['id', 'nombre', 'direccion']);
+
+        return response()->json($colegios);
+    }
+
+    public function getRutasByColegio($colegioId)
+    {
+        $rutas = Setting::where('colegio_id', $colegioId)
+            ->where('status', 'activo')
+            ->orderBy('key_app')
+            ->get(['id', 'key_app', 'start_time', 'out_time']);
+
+        return response()->json($rutas);
+    }
+
+    public function getParaderosByRuta($rutaId)
+    {
+        $paraderos = Paradero::where('ruta_id', $rutaId)
+            ->where('estado', 'activo')
+            ->orderBy('orden')
+            ->get(['id', 'nombre', 'hora', 'monto', 'es_beca_empresarial', 'orden']);
+
+        return response()->json($paraderos);
     }
 
     /**

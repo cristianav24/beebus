@@ -29,6 +29,7 @@ class History extends BaseHistory
 		'contrato_url',
 		'contrato_fecha_subida',
 		'contrato_subido_por',
+		'paradero_id',
 	];
 
 	protected $casts = [
@@ -68,6 +69,11 @@ class History extends BaseHistory
 	public function tarifa()
 	{
 		return $this->belongsTo(Tarifa::class, 'tarifa_id');
+	}
+
+	public function paradero()
+	{
+		return $this->belongsTo(Paradero::class, 'paradero_id');
 	}
 
 	public function creditTransactions()

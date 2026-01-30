@@ -11,6 +11,17 @@ class Setting extends BaseSetting
 		'out_time',
 		'key_app',
         'timezone',
-        'status'
+        'status',
+        'colegio_id'
     ];
+
+    public function colegio()
+    {
+        return $this->belongsTo(Colegio::class, 'colegio_id');
+    }
+
+    public function paraderos()
+    {
+        return $this->hasMany(Paradero::class, 'ruta_id');
+    }
 }

@@ -84,6 +84,30 @@ class ParentDashboardController extends Controller
         ));
     }
 
+    public function myChildren()
+    {
+        $user = Auth::user();
+
+        $parent = ParentProfile::where('user_id', $user->id)->first();
+        if (!$parent || !$parent->isProfileComplete()) {
+            return redirect()->route('parent.profile.reminder');
+        }
+
+        $approvedRelationships = ParentChildRelationship::where('parent_user_id', $user->id)
+            ->where('status', 'approved')
+            ->with(['student.colegio', 'student.beca', 'student.ruta', 'student.tarifa'])
+            ->get();
+
+        // Generar QR data para cada estudiante
+        $children = $approvedRelationships->map(function ($relationship) {
+            $student = $relationship->student;
+            $student->qr_data = Crypt::encryptString($student->id);
+            return $student;
+        });
+
+        return view('backend.parent.my-children', compact('children'));
+    }
+
     public function assignChildren()
     {
         $user = Auth::user();

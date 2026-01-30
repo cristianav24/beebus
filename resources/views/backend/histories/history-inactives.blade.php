@@ -2,10 +2,10 @@
 
 @extends('adminlte::page')
 
-@section('title', 'Accesos Qr  | ' . Config::get('adminlte.title'))
+@section('title', 'Alumnos Inactivos  | ' . Config::get('adminlte.title'))
 
 @section('content_header')
-    <h1>Accesos Qr Inactivos</h1>
+    <h1>Alumnos Inactivos</h1>
 @stop
 
 @section('content')

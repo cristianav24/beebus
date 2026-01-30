@@ -88,8 +88,10 @@ Route::group(['middleware' => ['role:administrator|admin|estudiante|guest']], fu
 Route::group(['middleware' => ['role:administrator|admin']], function () {
     Route::GET('/histories', 'Backend\History\HistoryController@index')->name('histories');
     Route::GET('/histories/inactive', 'Backend\History\HistoryController@inactive')->name('histories.inactive');
+    Route::GET('/histories/pending', 'Backend\History\HistoryController@pending')->name('histories.pending');
     Route::GET('/histories/add', 'Backend\History\HistoryController@add')->name('histories.add');
     Route::POST('/histories/create', 'Backend\History\HistoryController@create')->name('histories.create');
+    Route::GET('/histories/show/{id}', 'Backend\History\HistoryController@show')->name('histories.show');
     Route::GET('/histories/edit/{id}', 'Backend\History\HistoryController@edit')->name('histories.edit');
     Route::POST('/histories/update', 'Backend\History\HistoryController@update')->name('histories.update');
     Route::GET('/histories/delete/{id}', 'Backend\History\HistoryController@delete')->name('histories.delete');
@@ -99,6 +101,11 @@ Route::group(['middleware' => ['role:administrator|admin']], function () {
 
     Route::GET('/histories/import', 'Backend\History\HistoryController@import')->name('histories.import');
     Route::POST('/histories/importData', 'Backend\History\HistoryController@importData')->name('histories.importData');
+
+    // AJAX Cascade: Zona -> Colegio -> Ruta -> Paradero
+    Route::GET('/histories/zonas/{zonaId}/colegios', 'Backend\History\HistoryController@getColegiosByZona')->name('histories.colegiosByZona');
+    Route::GET('/histories/colegios/{colegioId}/rutas', 'Backend\History\HistoryController@getRutasByColegio')->name('histories.rutasByColegio');
+    Route::GET('/histories/rutas/{rutaId}/paraderos', 'Backend\History\HistoryController@getParaderosByRuta')->name('histories.paraderosByRuta');
 
     // Colegios Routes
     Route::GET('/colegios', 'Backend\Colegio\ColegioController@index')->name('colegios.index');
@@ -147,6 +154,9 @@ Route::group(['middleware' => ['role:guest']], function () {
     // Parent Dashboard
     Route::GET('/parent/dashboard', 'Backend\Parent\ParentDashboardController@index')->name('parent.dashboard');
 
+    // My Children - Profile, QR, Contracts
+    Route::GET('/parent/my-children', 'Backend\Parent\ParentDashboardController@myChildren')->name('parent.my-children');
+
     // Assignment System
     Route::GET('/parent/assign-children', 'Backend\Parent\ParentDashboardController@assignChildren')->name('parent.assign-children');
     Route::GET('/parent/search-students', 'Backend\Parent\ParentDashboardController@searchStudents')->name('parent.search-students');
@@ -180,6 +190,9 @@ Route::group(['middleware' => ['role:estudiante']], function () {
     Route::POST('/student/upload-contract', 'Backend\Student\StudentDashboardController@uploadContract')->name('student.upload-contract');
     Route::GET('/student/download-contract', 'Backend\Student\StudentDashboardController@downloadContract')->name('student.download-contract');
     Route::GET('/student/download-qr', 'Backend\Student\StudentDashboardController@downloadQR')->name('student.download-qr');
+    // Firma digital
+    Route::GET('/student/sign-contract', 'Backend\Student\StudentDashboardController@showSignContract')->name('student.sign-contract');
+    Route::POST('/student/save-signature', 'Backend\Student\StudentDashboardController@saveSignature')->name('student.save-signature');
 });
 
 /*

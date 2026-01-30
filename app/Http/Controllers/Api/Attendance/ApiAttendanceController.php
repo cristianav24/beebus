@@ -9,6 +9,7 @@ use App\Models\History;
 use App\Http\Controllers\EmailController;
 use App\Models\Beca;
 use App\Models\Tarifa;
+use App\Models\Paradero;
 use App\Models\CreditTransaction;
 use Illuminate\Http\Request;
 use Response;
@@ -116,23 +117,59 @@ class ApiAttendanceController extends Controller
                     $tarifa_id = $getUserMarcaInfo->tarifa_id;
 
                     // CONTROLES //
-                    // Validar si el estudiante tiene tarifa asignada
-                    if (!$tarifa_id) {
-                        $data = [
-                            'message' => 'Error! Estudiante sin tarifa asignada. Contacte al administrador.',
-                        ];
-                        return response()->json($data, 200);
-                    }
+                    // Determinar monto a cobrar - Prioridad: 1) Beca, 2) Paradero, 3) Tarifa
+                    $cuantoVoyARestar = 0;
+                    $paradero_id = $getUserMarcaInfo->paradero_id;
+                    $fuenteMonto = ''; // Para logging
 
-                    // Obtener el monto de la tarifa asignada al estudiante
-                    $tarifa = Tarifa::find($tarifa_id);
-                    if (!$tarifa || $tarifa->estado !== 'activa') {
+                    // PRIORIDAD 1: Si tiene beca, usar monto de la beca
+                    if ($beca_id) {
+                        $beca = Beca::find($beca_id);
+                        if ($beca && $beca->estado === 'activa') {
+                            $cuantoVoyARestar = $beca->monto_creditos; // 0 = beca completa, >0 = beca parcial
+                            $fuenteMonto = 'beca:' . $beca->nombre_beca;
+                        }
+                    }
+                    // PRIORIDAD 2: Si NO tiene beca, verificar paradero
+                    elseif ($paradero_id) {
+                        $paradero = Paradero::find($paradero_id);
+                        if ($paradero && $paradero->estado === 'activo') {
+                            // Beca empresarial del paradero: monto 0
+                            if ($paradero->es_beca_empresarial && $paradero->monto == 0) {
+                                $cuantoVoyARestar = 0;
+                                $fuenteMonto = 'paradero:beca_empresarial';
+                            } else {
+                                $cuantoVoyARestar = $paradero->monto;
+                                $fuenteMonto = 'paradero:' . $paradero->nombre;
+                            }
+                        } else {
+                            // Fallback a tarifa si paradero no es valido
+                            if ($tarifa_id) {
+                                $tarifa = Tarifa::find($tarifa_id);
+                                if ($tarifa && $tarifa->estado === 'activa') {
+                                    $cuantoVoyARestar = $tarifa->monto;
+                                    $fuenteMonto = 'tarifa:' . $tarifa->nombre;
+                                }
+                            }
+                        }
+                    }
+                    // PRIORIDAD 3: Legacy - usar tarifa directamente
+                    elseif ($tarifa_id) {
+                        $tarifa = Tarifa::find($tarifa_id);
+                        if (!$tarifa || $tarifa->estado !== 'activa') {
+                            $data = [
+                                'message' => 'Error! Tarifa no válida o inactiva. Contacte al administrador.',
+                            ];
+                            return response()->json($data, 200);
+                        }
+                        $cuantoVoyARestar = $tarifa->monto;
+                        $fuenteMonto = 'tarifa:' . $tarifa->nombre;
+                    } else {
                         $data = [
-                            'message' => 'Error! Tarifa no válida o inactiva. Contacte al administrador.',
+                            'message' => 'Error! Estudiante sin beca, tarifa ni paradero asignado. Contacte al administrador.',
                         ];
                         return response()->json($data, 200);
                     }
-                    $cuantoVoyARestar = $tarifa->monto;
                     $newsCreditos = $getUserMarcaInfo->creditos - $cuantoVoyARestar;
                     $chancesParaMarcar = $getUserMarcaInfo->chancesParaMarcar;
 
@@ -302,9 +339,14 @@ class ApiAttendanceController extends Controller
                                     return response()->json($data, 200);
                                 }
                             }
+                        } elseif ($getUserMarcaInfo->status == 2) {
+                            $data = [
+                                'message' => 'Error! El usuario esta pendiente de activacion. Contacte al administrador.',
+                            ];
+                            return response()->json($data, 200);
                         } else {
                             $data = [
-                                'message' => 'Error! El usuario esta inactivo',
+                                'message' => 'Error! El usuario esta inactivo.',
                             ];
                             return response()->json($data, 200);
                         }

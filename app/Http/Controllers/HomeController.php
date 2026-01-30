@@ -29,10 +29,14 @@ class HomeController extends Controller
     {
         $user = auth()->user();
 
-        // Redirect guest users (parents) to their dashboard
-        //dd($user->role);
-        if ($user->role === 4) {
+        // Redirect parents to their dashboard
+        if ($user->role == 4) {
             return redirect()->route('parent.dashboard');
+        }
+
+        // Redirect students to their dashboard
+        if ($user->role == 3) {
+            return redirect()->route('student.dashboard');
         }
 
         // Get start time to check late worker

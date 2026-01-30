@@ -3,7 +3,7 @@
 @section('title', 'Create and Update Histories Qr ' . Config::get('adminlte.title'))
 
 @section('content_header')
-    <h1>Accesos QR</h1>
+    <h1>Alumnos</h1>
 @stop
 
 @section('content')
@@ -109,7 +109,7 @@
 				
 				<br>
 				
-				<div class="form-group row"> 
+				<div class="form-group row">
     				<div class="col-sm-2 col-form-label">
     					<strong class="field-title">¿Chances para marcar sin creditos?</strong>
     				</div>
@@ -119,6 +119,8 @@
                         </small>
     				</div>
 				</div>
+
+                {{ Form::hidden('paradero_id', $data->paradero_id ?? null, array('id' => 'paradero_id')) }}
 
         </div>
 

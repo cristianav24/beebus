@@ -7,6 +7,9 @@ use App\Providers\RouteServiceProvider;
 use App\Models\User;
 use App\Models\History;
 use App\Models\ParentProfile;
+use App\Models\Colegio;
+use App\Models\Setting;
+use App\Models\Zona;
 use Illuminate\Foundation\Auth\RegistersUsers;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
@@ -43,6 +46,13 @@ class RegisterController extends Controller
         $this->middleware('guest');
     }
 
+    public function showRegistrationForm()
+    {
+        $zonas = Zona::where('estado', 'activo')->orderBy('nombre')->get();
+
+        return view('auth.register', compact('zonas'));
+    }
+
     /**
      * Get a validator for an incoming registration request.
      *
@@ -59,6 +69,9 @@ class RegisterController extends Controller
             'role' => ['required'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
+            'colegio_id' => ['nullable', 'integer', 'exists:colegios,id'],
+            'ruta_id' => ['nullable', 'integer', 'exists:settings,id'],
+            'paradero_id' => ['nullable', 'integer', 'exists:paraderos,id'],
         ]);
     }
 
@@ -89,7 +102,7 @@ class RegisterController extends Controller
 
         // Si es estudiante (role=3), crear History con status=2 (pendiente)
         if ($data['role'] == 3) {
-            History::create([
+            $historyData = [
                 'user_id' => $createNew->id,
                 'name' => $fullName,
                 'first_name' => $data['first_name'],
@@ -101,7 +114,25 @@ class RegisterController extends Controller
                 'creditos' => 0,
                 'cuantoRestar' => 0,
                 'chancesParaMarcar' => 0,
-            ]);
+            ];
+
+            if (!empty($data['colegio_id'])) {
+                $historyData['colegio_id'] = $data['colegio_id'];
+                $colegio = Colegio::find($data['colegio_id']);
+                if ($colegio) {
+                    $historyData['colegio'] = $colegio->nombre;
+                }
+            }
+
+            if (!empty($data['ruta_id'])) {
+                $historyData['ruta_id'] = $data['ruta_id'];
+            }
+
+            if (!empty($data['paradero_id'])) {
+                $historyData['paradero_id'] = $data['paradero_id'];
+            }
+
+            History::create($historyData);
         }
 
         // Si es padre (role=4), crear ParentProfile con cedula
