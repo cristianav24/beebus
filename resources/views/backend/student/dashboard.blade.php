@@ -62,6 +62,9 @@
                             <p><strong>Tarifa:</strong>
                                 @if($student->tarifa_id && $student->tarifa)
                                     {{ $student->tarifa->nombre }} - ₡{{ number_format($student->tarifa->monto, 0, ',', '.') }}
+                                @elseif($student->paradero_id && $student->paradero && $student->paradero->monto > 0)
+                                    ₡{{ number_format($student->paradero->monto, 0, ',', '.') }}
+                                    <small class="text-muted">(tarifa del paradero)</small>
                                 @else
                                     Sin tarifa asignada
                                 @endif

@@ -61,6 +61,9 @@
                         <td>
                             @if($student->tarifa)
                                 {{ $student->tarifa->nombre }} - <strong>₡{{ number_format($student->tarifa->monto, 0, ',', '.') }}</strong>
+                            @elseif($student->paradero && $student->paradero->monto > 0)
+                                <strong>₡{{ number_format($student->paradero->monto, 0, ',', '.') }}</strong>
+                                <small class="text-muted">(tarifa del paradero)</small>
                             @else
                                 <span class="text-danger">Sin tarifa</span>
                             @endif

@@ -23,7 +23,7 @@ class StudentDashboardController extends Controller
         $user = Auth::user();
 
         // Buscar el registro del estudiante por user_id
-        $student = History::with(['colegio', 'beca', 'ruta', 'tarifa'])
+        $student = History::with(['colegio', 'beca', 'ruta', 'tarifa', 'paradero'])
             ->where('user_id', $user->id)
             ->first();
 

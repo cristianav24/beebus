@@ -67,13 +67,15 @@ class HistoryController extends Controller
                 ->leftJoin('becas', 'histories.beca_id', '=', 'becas.id')
                 ->leftJoin('settings', 'histories.ruta_id', '=', 'settings.id')
                 ->leftJoin('tarifas', 'histories.tarifa_id', '=', 'tarifas.id')
+                ->leftJoin('paraderos', 'histories.paradero_id', '=', 'paraderos.id')
                 ->select(
                     'histories.*',
                     'colegios.nombre as colegio_nombre',
                     'becas.nombre_beca as beca_nombre',
                     'settings.key_app as ruta_nombre',
                     'tarifas.nombre as tarifa_nombre',
-                    'tarifas.monto as tarifa_monto'
+                    'tarifas.monto as tarifa_monto',
+                    'paraderos.monto as paradero_monto'
                 );
 
             return $datatables->of($query)
@@ -112,6 +114,9 @@ class HistoryController extends Controller
                 ->addColumn('tarifa_info', function (History $data) {
                     if ($data->tarifa_id && $data->tarifa_monto !== null) {
                         return '<span class="badge badge-success">₡' . number_format($data->tarifa_monto, 0, ',', '.') . '</span>';
+                    }
+                    if ($data->paradero_id && $data->paradero_monto !== null && $data->paradero_monto > 0) {
+                        return '<span class="badge badge-info">₡' . number_format($data->paradero_monto, 0, ',', '.') . '</span> <small class="text-muted">(paradero)</small>';
                     }
                     return '<span class="badge badge-danger">Sin tarifa</span>';
                 })
@@ -601,7 +606,7 @@ class HistoryController extends Controller
      */
     public function show($id)
     {
-        $student = History::with(['colegio', 'beca', 'ruta', 'tarifa'])->findOrFail($id);
+        $student = History::with(['colegio', 'beca', 'ruta', 'tarifa', 'paradero'])->findOrFail($id);
 
         // Usuario vinculado
         $user = $student->user_id ? User::find($student->user_id) : null;

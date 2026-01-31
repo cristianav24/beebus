@@ -117,7 +117,7 @@ class ApiAttendanceController extends Controller
                     $tarifa_id = $getUserMarcaInfo->tarifa_id;
 
                     // CONTROLES //
-                    // Determinar monto a cobrar - Prioridad: 1) Beca, 2) Paradero, 3) Tarifa
+                    // Determinar monto a cobrar - Prioridad: 1) Beca, 2) Tarifa, 3) Paradero
                     $cuantoVoyARestar = 0;
                     $paradero_id = $getUserMarcaInfo->paradero_id;
                     $fuenteMonto = ''; // Para logging
@@ -130,7 +130,20 @@ class ApiAttendanceController extends Controller
                             $fuenteMonto = 'beca:' . $beca->nombre_beca;
                         }
                     }
-                    // PRIORIDAD 2: Si NO tiene beca, verificar paradero
+                    // PRIORIDAD 2: Tarifa asignada al estudiante
+                    elseif ($tarifa_id) {
+                        $tarifa = Tarifa::find($tarifa_id);
+                        if ($tarifa && $tarifa->estado === 'activa') {
+                            $cuantoVoyARestar = $tarifa->monto;
+                            $fuenteMonto = 'tarifa:' . $tarifa->nombre;
+                        } else {
+                            $data = [
+                                'message' => 'Error! Tarifa no válida o inactiva. Contacte al administrador.',
+                            ];
+                            return response()->json($data, 200);
+                        }
+                    }
+                    // PRIORIDAD 3: Fallback al paradero
                     elseif ($paradero_id) {
                         $paradero = Paradero::find($paradero_id);
                         if ($paradero && $paradero->estado === 'activo') {
@@ -142,28 +155,7 @@ class ApiAttendanceController extends Controller
                                 $cuantoVoyARestar = $paradero->monto;
                                 $fuenteMonto = 'paradero:' . $paradero->nombre;
                             }
-                        } else {
-                            // Fallback a tarifa si paradero no es valido
-                            if ($tarifa_id) {
-                                $tarifa = Tarifa::find($tarifa_id);
-                                if ($tarifa && $tarifa->estado === 'activa') {
-                                    $cuantoVoyARestar = $tarifa->monto;
-                                    $fuenteMonto = 'tarifa:' . $tarifa->nombre;
-                                }
-                            }
                         }
-                    }
-                    // PRIORIDAD 3: Legacy - usar tarifa directamente
-                    elseif ($tarifa_id) {
-                        $tarifa = Tarifa::find($tarifa_id);
-                        if (!$tarifa || $tarifa->estado !== 'activa') {
-                            $data = [
-                                'message' => 'Error! Tarifa no válida o inactiva. Contacte al administrador.',
-                            ];
-                            return response()->json($data, 200);
-                        }
-                        $cuantoVoyARestar = $tarifa->monto;
-                        $fuenteMonto = 'tarifa:' . $tarifa->nombre;
                     } else {
                         $data = [
                             'message' => 'Error! Estudiante sin beca, tarifa ni paradero asignado. Contacte al administrador.',
