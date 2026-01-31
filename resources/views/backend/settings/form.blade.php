@@ -174,24 +174,187 @@
     } else {
         ?>
         <div class="card-body">
-            <div class="row text-center">
-                <h5> Selecciona la <b>Ruta</b> para Obtener la Información: </h5>
-                <div class="row">
-                    <?php
-                    $todasLasSettings = mysqli_query($con, " SELECT * FROM settings");
-                    $numRowsSe = mysqli_num_rows($todasLasSettings);
-                    if ($numRowsSe > 0) {
-                        while ($rowTodasLasSettings = mysqli_fetch_array($todasLasSettings)) {
-                    ?>
-                            <div class="col-md-4">
-                                <a class="btn btn-info btn-lg btn-block mb-3" href="?key=<?php echo $rowTodasLasSettings['key_app'] ?>" role="button"><?php echo $rowTodasLasSettings['key_app'] ?></a>
-                            </div>
-                    <?php
-                        }
-                    }
-                    ?>
+            <!-- Estadisticas -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="info-box bg-info">
+                        <span class="info-box-icon"><i class="fas fa-route"></i></span>
+                        <div class="info-box-content">
+                            <span class="info-box-text">Total Rutas</span>
+                            <span class="info-box-number">{{ $totalRutas }}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="info-box bg-success">
+                        <span class="info-box-icon"><i class="fas fa-check-circle"></i></span>
+                        <div class="info-box-content">
+                            <span class="info-box-text">Activas</span>
+                            <span class="info-box-number">{{ $rutasActivas }}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="info-box bg-warning">
+                        <span class="info-box-icon"><i class="fas fa-pause-circle"></i></span>
+                        <div class="info-box-content">
+                            <span class="info-box-text">Inactivas</span>
+                            <span class="info-box-number">{{ $rutasInactivas }}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="info-box bg-secondary">
+                        <span class="info-box-icon"><i class="fas fa-question-circle"></i></span>
+                        <div class="info-box-content">
+                            <span class="info-box-text">Sin Colegio</span>
+                            <span class="info-box-number">{{ $rutasSinColegioCount }}</span>
+                        </div>
+                    </div>
                 </div>
             </div>
+
+            <!-- Accordion de Zonas -->
+            <div class="accordion" id="accordionZonas">
+                @php $zonaIndex = 0; @endphp
+                @foreach($zonas as $zona)
+                    @php
+                        $rutasEnZona = 0;
+                        foreach($zona->colegios as $colegio) {
+                            $rutasEnZona += $colegio->rutas->count();
+                        }
+                    @endphp
+                    @if($rutasEnZona > 0)
+                    <div class="card mb-2">
+                        <div class="card-header p-0" id="headingZona{{ $zona->id }}">
+                            <h2 class="mb-0">
+                                <button class="btn btn-link btn-block text-left p-3 {{ $zonaIndex > 0 ? 'collapsed' : '' }}" type="button" data-toggle="collapse" data-target="#collapseZona{{ $zona->id }}" aria-expanded="{{ $zonaIndex == 0 ? 'true' : 'false' }}" aria-controls="collapseZona{{ $zona->id }}">
+                                    <i class="fas fa-map-marker-alt mr-2"></i>
+                                    <strong>ZONA: {{ strtoupper($zona->nombre) }}</strong>
+                                    <span class="badge badge-primary ml-2">{{ $rutasEnZona }} rutas</span>
+                                    <i class="fas fa-chevron-down float-right mt-1"></i>
+                                </button>
+                            </h2>
+                        </div>
+                        <div id="collapseZona{{ $zona->id }}" class="collapse {{ $zonaIndex == 0 ? 'show' : '' }}" aria-labelledby="headingZona{{ $zona->id }}" data-parent="#accordionZonas">
+                            <div class="card-body">
+                                @foreach($zona->colegios as $colegio)
+                                    @if($colegio->rutas->count() > 0)
+                                    <div class="card mb-3">
+                                        <div class="card-header bg-light">
+                                            <i class="fas fa-school mr-2"></i>
+                                            <strong>{{ $colegio->nombre }}</strong>
+                                            <span class="badge badge-secondary ml-2">{{ $colegio->rutas->count() }} rutas</span>
+                                        </div>
+                                        <div class="card-body p-0">
+                                            <table class="table table-striped table-hover mb-0">
+                                                <thead class="thead-light">
+                                                    <tr>
+                                                        <th>Key App</th>
+                                                        <th>Estado</th>
+                                                        <th>Paraderos</th>
+                                                        <th>Acciones</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    @foreach($colegio->rutas as $ruta)
+                                                    <tr>
+                                                        <td>
+                                                            <i class="fas fa-bus mr-1 text-muted"></i>
+                                                            {{ $ruta->key_app }}
+                                                        </td>
+                                                        <td>
+                                                            @if($ruta->status == 'activo')
+                                                                <span class="badge badge-success">Activo</span>
+                                                            @else
+                                                                <span class="badge badge-warning">Inactivo</span>
+                                                            @endif
+                                                        </td>
+                                                        <td>
+                                                            <span class="badge badge-info">{{ $ruta->paraderos->count() }}</span>
+                                                        </td>
+                                                        <td>
+                                                            <a href="?key={{ $ruta->key_app }}" class="btn btn-sm btn-primary">
+                                                                <i class="fas fa-edit"></i> Editar
+                                                            </a>
+                                                        </td>
+                                                    </tr>
+                                                    @endforeach
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                    @endif
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
+                    @php $zonaIndex++; @endphp
+                    @endif
+                @endforeach
+
+                <!-- Rutas sin colegio asignado -->
+                @if($rutasSinColegio->count() > 0)
+                <div class="card mb-2">
+                    <div class="card-header p-0 bg-secondary" id="headingSinAsignar">
+                        <h2 class="mb-0">
+                            <button class="btn btn-link btn-block text-left p-3 text-white collapsed" type="button" data-toggle="collapse" data-target="#collapseSinAsignar" aria-expanded="false" aria-controls="collapseSinAsignar">
+                                <i class="fas fa-exclamation-triangle mr-2"></i>
+                                <strong>SIN ASIGNAR</strong>
+                                <span class="badge badge-light ml-2">{{ $rutasSinColegio->count() }} rutas</span>
+                                <i class="fas fa-chevron-down float-right mt-1"></i>
+                            </button>
+                        </h2>
+                    </div>
+                    <div id="collapseSinAsignar" class="collapse" aria-labelledby="headingSinAsignar" data-parent="#accordionZonas">
+                        <div class="card-body p-0">
+                            <table class="table table-striped table-hover mb-0">
+                                <thead class="thead-light">
+                                    <tr>
+                                        <th>Key App</th>
+                                        <th>Estado</th>
+                                        <th>Paraderos</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($rutasSinColegio as $ruta)
+                                    <tr>
+                                        <td>
+                                            <i class="fas fa-bus mr-1 text-muted"></i>
+                                            {{ $ruta->key_app }}
+                                        </td>
+                                        <td>
+                                            @if($ruta->status == 'activo')
+                                                <span class="badge badge-success">Activo</span>
+                                            @else
+                                                <span class="badge badge-warning">Inactivo</span>
+                                            @endif
+                                        </td>
+                                        <td>
+                                            <span class="badge badge-info">{{ $ruta->paraderos->count() }}</span>
+                                        </td>
+                                        <td>
+                                            <a href="?key={{ $ruta->key_app }}" class="btn btn-sm btn-primary">
+                                                <i class="fas fa-edit"></i> Editar
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                @endif
+            </div>
+
+            @if($totalRutas == 0)
+            <div class="alert alert-info text-center">
+                <i class="fas fa-info-circle mr-2"></i>
+                No hay rutas registradas. Haga clic en "Agregar nueva Ruta" para crear una.
+            </div>
+            @endif
         </div>
     <?php
     }
@@ -338,6 +501,32 @@
 @stop
 
 @section('css')
+<style>
+    #accordionZonas .btn-link {
+        text-decoration: none;
+        color: #333;
+    }
+    #accordionZonas .btn-link:hover {
+        text-decoration: none;
+    }
+    #accordionZonas .btn-link .fa-chevron-down {
+        transition: transform 0.3s ease;
+    }
+    #accordionZonas .btn-link:not(.collapsed) .fa-chevron-down {
+        transform: rotate(180deg);
+    }
+    #accordionZonas .btn-link.text-white {
+        color: #fff !important;
+    }
+    .info-box {
+        min-height: 80px;
+    }
+    .info-box-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+</style>
 @stop
 
 @section('js')

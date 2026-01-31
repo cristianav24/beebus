@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use App\Models\Setting;
 use App\Models\Colegio;
+use App\Models\Zona;
 use Config;
 
 class SettingsController extends Controller {
@@ -38,7 +39,7 @@ class SettingsController extends Controller {
      */
     public function index() {
         $key = request()->query('key');
-        
+
         if ($key) {
             // Si hay una key específica, buscar esa ruta
             $data = Setting::where('key_app', $key)->first();
@@ -48,20 +49,47 @@ class SettingsController extends Controller {
             $data->form_action = $this->getRoute() . '.update';
             $data->button_text = 'Update';
             $data->qr = "{'url':'" . url('/') . "', 'key':'" . $data->key_app . "'}";
-        } else {
-            // Si no hay key, mostrar la página de selección
-            $data = new Setting();
-            $data->form_action = '';
-            $data->button_text = '';
+
+            $colegios = Colegio::orderBy('nombre')->get();
+
+            return view('backend.settings.form', [
+                'data' => $data,
+                'timezone' => $this->timezone(),
+                'key' => $key,
+                'colegios' => $colegios,
+            ]);
         }
+
+        // Si no hay key, mostrar la página de listado organizado por zonas
+        $zonas = Zona::with(['colegios.rutas.paraderos'])
+            ->orderBy('nombre')
+            ->get();
+
+        // Rutas sin colegio asignado (huerfanas)
+        $rutasSinColegio = Setting::whereNull('colegio_id')
+            ->with('paraderos')
+            ->orderBy('key_app')
+            ->get();
+
+        // Estadisticas
+        $totalRutas = Setting::count();
+        $rutasActivas = Setting::where('status', 'activo')->count();
+        $rutasInactivas = Setting::where('status', 'inactivo')->count();
+        $rutasSinColegioCount = $rutasSinColegio->count();
 
         $colegios = Colegio::orderBy('nombre')->get();
 
         return view('backend.settings.form', [
-            'data' => $data,
+            'data' => new Setting(),
             'timezone' => $this->timezone(),
             'key' => $key,
             'colegios' => $colegios,
+            'zonas' => $zonas,
+            'rutasSinColegio' => $rutasSinColegio,
+            'totalRutas' => $totalRutas,
+            'rutasActivas' => $rutasActivas,
+            'rutasInactivas' => $rutasInactivas,
+            'rutasSinColegioCount' => $rutasSinColegioCount,
         ]);
     }
 
