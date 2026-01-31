@@ -134,6 +134,10 @@ class ThirdPartyRechargeController extends Controller
                 ], 403);
             }
 
+            // Generate sequential PayMe operation number
+            $paymeSeqId = DB::table('payme_sequences')->insertGetId(['created_at' => now()]);
+            $purchaseOperationNumber = str_pad($paymeSeqId, 9, '0', STR_PAD_LEFT);
+
             // Create pending transaction
             $payerFullName = $request->payer_name . ' ' . $request->payer_lastname;
             $tempTransaction = CreditTransaction::create([
@@ -146,9 +150,6 @@ class ThirdPartyRechargeController extends Controller
                 'payment_method' => 'payme',
                 'verification_status' => 'pending'
             ]);
-
-            // Generate unique 9-digit purchase operation number
-            $purchaseOperationNumber = str_pad($tempTransaction->id, 9, '0', STR_PAD_LEFT);
 
             // PayMe configuration
             $acquirerId = config('services.payme.acquirer_id');

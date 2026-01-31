@@ -82,7 +82,11 @@ class PayMeController extends Controller
 
             $student = $relationship->student;
 
-            // Create pending transaction FIRST to get the ID
+            // Generate sequential PayMe operation number
+            $paymeSeqId = DB::table('payme_sequences')->insertGetId(['created_at' => now()]);
+            $purchaseOperationNumber = str_pad($paymeSeqId, 9, '0', STR_PAD_LEFT);
+
+            // Create pending transaction
             $tempTransaction = CreditTransaction::create([
                 'history_id' => $student->id,
                 'type' => 'recarga_payme',
@@ -94,10 +98,6 @@ class PayMeController extends Controller
                 'processed_by' => Auth::id(),
                 'verification_status' => 'pending'
             ]);
-
-            // Generate unique 9-digit purchase operation number using transaction ID
-            // Pad with zeros to ensure exactly 9 digits (max: 999999999)
-            $purchaseOperationNumber = str_pad($tempTransaction->id, 9, '0', STR_PAD_LEFT);
 
             // PayMe configuration
             $acquirerId = config('services.payme.acquirer_id');
